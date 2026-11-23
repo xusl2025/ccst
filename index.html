@@ -1,0 +1,2366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Cube, the Group</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Design tokens. Palette follows New/Slide-Example: warm paper, black ink,
+   a flat navy letterbox, coral accent. Every slide may only use these. */
+:root{
+  /* paper + ink */
+  --paper:#F8F1DF;
+  --paper-2:#FCF7EA;
+  --paper-3:#F1E8D3;
+  --ink:#0D0D0F;
+  --ink-2:#2A2A2C;
+  --muted:#6E6A60;
+  --faint:#A29C8D;
+  --rule:#D6CDB6;
+  --rule-soft:#E7DFCC;
+
+  /* accents (sampled: coral, teal, sand, olive) */
+  --clay:#E2603F;
+  --clay-deep:#C2482A;
+  --teal:#3E877E;
+  --sand:#C6A98A;
+  --olive:#8A7A4E;
+
+  /* dark pages + the letterbox around the stage */
+  --night:#11141D;
+  --night-2:#1A1E29;
+  --night-ink:#F8F1DF;
+  --night-muted:#ADA99C;
+  --night-rule:#2C303C;
+
+  /* cube diagrams (sampled from the OLL/PLL reference) */
+  --cube-gray:#8A8583;
+  --cube-yellow:#FEE800;
+  --cube-red:#DF0003;
+  --cube-orange:#FC7500;
+  --cube-blue:#2738C5;
+  --cube-green:#228F1A;
+  --cube-gap:#141414;
+  --cube-spine:#4A4A4A;
+
+  /* type: one heavy grotesque for display, the same family for text */
+  --display:"Inter","Helvetica Neue",Arial,sans-serif;
+  --body:"Inter","Helvetica Neue",Arial,sans-serif;
+  --smallcaps:"Inter","Helvetica Neue",Arial,sans-serif;
+
+  /* stage geometry: 16:9 design canvas */
+  --stage-w:1600px;
+  --stage-h:900px;
+  --margin-x:110px;
+  --margin-top:132px;
+  --margin-bottom:30px;
+}
+
+/* Deck shell and shared components. Uses only tokens.css. */
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+sub,sup{font-size:.68em;line-height:0;position:relative;vertical-align:baseline}
+sub{bottom:-.22em}
+sup{top:-.42em}
+body{
+  background:#141722;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ---------- stage: a fixed 16:9 design canvas, scaled to fit ---------- */
+.stage{
+  position:absolute;left:50%;top:50%;
+  width:var(--stage-w);height:var(--stage-h);
+  transform:translate(-50%,-50%) scale(var(--s,1));
+  transform-origin:center center;
+  box-shadow:0 30px 90px rgba(0,0,0,.5);
+}
+.slide{
+  position:absolute;inset:0;
+  background:var(--paper);color:var(--ink);
+  opacity:0;visibility:hidden;
+  transition:opacity .42s ease,visibility .42s;
+  overflow:hidden;
+}
+/* the incoming page is opaque from frame one; the outgoing one fades out on
+   top of it, so the transition never shows the dark surround through a
+   half-transparent page */
+.slide.on{opacity:1;visibility:visible;transition:none;z-index:2}
+.slide.leaving{visibility:visible;z-index:3}
+.slide.night{background:var(--night);color:var(--night-ink)}
+
+.frame{
+  position:absolute;inset:0;
+  padding:var(--margin-top) var(--margin-x) 118px;
+  display:flex;flex-direction:column;
+}
+
+/* ---------- top bar: brand chip, pill nav, menu mark ---------- */
+.topbar{
+  position:absolute;left:var(--margin-x);right:var(--margin-x);top:30px;height:60px;
+  display:flex;align-items:center;gap:22px;z-index:5;
+  font-family:var(--display);
+}
+.brand{
+  display:inline-flex;align-items:center;height:60px;padding:0 26px;
+  border-radius:14px;background:var(--ink);color:var(--paper);
+  font-size:19px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;
+  white-space:nowrap;
+}
+.tabs{
+  margin:0 auto;display:flex;align-items:center;gap:2px;
+  height:60px;padding:6px;border-radius:999px;background:var(--ink);
+}
+.tab{
+  display:flex;align-items:center;height:48px;padding:0 30px;border-radius:999px;
+  color:rgba(248,241,223,.68);font-size:14px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+}
+.tab.on{color:var(--paper);font-weight:700}
+.burger{width:46px;height:32px;display:flex;flex-direction:column;justify-content:space-between;flex:none}
+.burger i{display:block;height:6px;border-radius:2px;background:var(--ink)}
+
+.night .brand{background:var(--paper);color:var(--ink)}
+.night .tabs{background:rgba(248,241,223,.10)}
+.night .tab{color:rgba(248,241,223,.62)}
+.night .tab.on{color:var(--paper)}
+.night .burger i{background:var(--paper)}
+
+/* ---------- chapter label ---------- */
+.kicker{
+  display:flex;align-items:center;gap:14px;
+  font-family:var(--display);font-size:13px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+  white-space:nowrap;
+}
+.kicker .no{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:44px;height:34px;padding:0 13px;border-radius:999px;
+  background:var(--ink);color:var(--paper);
+  font-size:14px;font-weight:800;letter-spacing:.1em;
+}
+.kicker .line{display:none}
+.night .kicker{color:var(--night-muted)}
+.night .kicker .no{background:var(--paper);color:var(--ink)}
+
+/* ---------- display type ---------- */
+.title{
+  text-wrap:balance;margin:26px 0 0;font-family:var(--display);font-weight:800;
+  font-size:74px;line-height:.98;letter-spacing:-.04em;color:var(--ink);
+}
+.title em{font-style:normal;font-weight:800;color:var(--clay)}
+.night .title{color:var(--night-ink)}
+.night .title em{color:var(--sand)}
+
+.lede{
+  margin:18px 0 0;max-width:66ch;
+  font-family:var(--body);font-size:20px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;
+}
+.night .lede{color:var(--night-muted)}
+
+/* ---------- footer bar ---------- */
+.foot{
+  position:absolute;left:var(--margin-x);right:var(--margin-x);bottom:var(--margin-bottom);
+  height:60px;padding:0 26px;border-radius:14px;
+  background:var(--ink);color:var(--paper);
+  display:flex;justify-content:space-between;align-items:center;gap:30px;
+  font-family:var(--display);font-size:13px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.foot .dot{color:var(--clay);margin:0 10px}
+.night .foot{background:var(--paper);color:var(--ink)}
+
+/* =========================================================
+   COVER
+   ========================================================= */
+.cover{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 500px;gap:70px;align-items:center}
+.cover .eyebrow{
+  font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);
+}
+.cover .display{
+  text-wrap:balance;margin:24px 0 0;font-family:var(--display);font-weight:900;
+  font-size:116px;line-height:.88;letter-spacing:-.05em;color:var(--ink);
+}
+.cover .display em{font-style:normal;font-weight:900;color:var(--clay)}
+.cover .sub{
+  margin:28px 0 0;max-width:32ch;font-family:var(--body);
+  font-size:22px;line-height:1.5;color:var(--ink-2);
+;text-wrap:pretty}
+.cover .byline{
+  margin-top:36px;font-family:var(--display);font-size:14px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.cover .byline:before{display:none}
+
+.cover-cube{
+  margin:0;position:relative;width:100%;height:520px;
+  border-radius:24px;background:var(--paper-2);
+}
+.cover-cube canvas{display:block;width:100%;height:100%}
+.cover-cube .cap{
+  position:absolute;left:22px;bottom:18px;font-family:var(--display);
+  font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+
+/* =========================================================
+   SPLIT (text + cube)
+   ========================================================= */
+.split{
+  flex:1;min-height:0;display:grid;grid-template-columns:560px minmax(0,1fr);
+  gap:64px;margin-top:24px;
+}
+.cube-stage{
+  margin:0;position:relative;border-radius:24px;background:var(--paper-2);
+}
+.cube-stage canvas{display:block;width:100%;height:100%}
+.cube-stage .tag{
+  position:absolute;right:22px;top:16px;
+  font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--clay);
+}
+.cube-stage .cap{
+  position:absolute;left:22px;bottom:18px;
+  font-family:var(--display);font-size:12.5px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);
+
+.cube-stage .cap.live{font-size:14px;letter-spacing:.08em;color:var(--ink-2);text-transform:none;font-weight:600}}
+.cube-stage .tally{
+  position:absolute;left:22px;top:16px;display:flex;flex-direction:column;gap:5px;
+  font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+.cube-stage .tally div{display:flex;align-items:baseline;gap:10px}
+.cube-stage .tally b{
+  font-size:17px;font-weight:800;letter-spacing:-.01em;color:var(--clay);
+  font-variant-numeric:tabular-nums;
+}
+.cube-stage .tally b.t-teal{color:var(--teal)}
+
+/* =========================================================
+   GROUP CHAIN
+   ========================================================= */
+.chain-wrap{display:flex;flex-direction:column;min-height:0}
+.chain-head{
+  display:grid;grid-template-columns:92px 1fr 156px;gap:18px;
+  padding:0 14px 10px;border-bottom:2px solid var(--ink);
+  font-family:var(--display);font-size:11.5px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);
+}
+.chain-head span:last-child{text-align:right}
+.chain-head sub{letter-spacing:0;font-size:.8em}
+.chain{list-style:none;margin:0;padding:0}
+.chain li{
+  display:grid;grid-template-columns:92px 1fr 156px;align-items:baseline;
+  gap:18px;padding:10px 14px;position:relative;
+  border-bottom:1px solid var(--rule-soft);
+  transition:background .3s;
+}
+.chain li:last-child{border-bottom:0}
+.chain li.on{background:var(--paper-2);border-radius:0 12px 12px 0}
+.chain li.on:before{
+  content:"";position:absolute;left:0;top:9px;bottom:9px;width:4px;border-radius:2px;background:var(--clay);
+}
+.chain .g{font-family:var(--display);font-size:30px;font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--clay)}
+.chain li.on .g{color:var(--ink)}
+.chain .gen{font-family:var(--body);font-size:16.5px;color:var(--ink-2)}
+.chain .meaning{display:block;margin-top:4px;font-family:var(--body);font-size:14.5px;color:var(--muted)}
+.chain .n{
+  text-align:right;font-family:var(--body);font-size:16px;color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.chain .n small{display:block;margin-top:3px;font-size:13.5px;letter-spacing:.03em;color:var(--ink-2)}
+
+.chain-note{
+  margin:auto 0 0;padding-top:16px;border-top:2px solid var(--ink);
+  font-family:var(--body);font-size:15px;line-height:1.5;color:var(--muted);
+;text-wrap:pretty}
+.chain-note b{font-weight:600;color:var(--ink-2)}
+.chain-note sub{font-size:.8em;bottom:-.16em}
+
+/* =========================================================
+   CFOP — four black cards
+   ========================================================= */
+.steps{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+  margin-top:34px;
+}
+.step{padding:26px 24px;border-radius:18px;background:var(--ink);color:var(--paper);position:relative}
+.step + .step{padding-left:24px;border-left:0}
+.step .idx{font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.2em;color:var(--clay)}
+.step h3{
+  margin:18px 0 0;font-family:var(--display);font-weight:800;
+  font-size:34px;line-height:1;letter-spacing:-.025em;color:var(--paper);
+}
+.step .abbr{
+  display:block;margin-top:8px;font-family:var(--display);font-size:11px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(248,241,223,.55);
+}
+.step p{margin:14px 0 0;font-family:var(--body);font-size:15.5px;line-height:1.5;color:rgba(248,241,223,.72);text-wrap:pretty}
+.step p b{font-weight:600;color:var(--paper)}
+
+.takeaway{
+  margin-top:auto;padding-top:20px;border-top:2px solid var(--ink);
+  display:flex;align-items:baseline;justify-content:space-between;gap:40px;
+}
+.takeaway p{margin:0;font-family:var(--body);font-size:16px;line-height:1.5;color:var(--ink-2);max-width:74ch;text-wrap:pretty}
+.takeaway p b{font-weight:600;color:var(--ink)}
+.takeaway .tick{
+  font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.01em;
+  color:var(--clay);white-space:nowrap;
+}
+
+/* =========================================================
+   EVENT HEAD: title + record sitting side by side
+   ========================================================= */
+.event-head{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:44px;align-items:start}
+.event-head .title{font-size:58px}
+.event-head .lede{max-width:660px;font-size:19px;line-height:1.5}
+.record{padding-top:58px}
+.record .eb{
+  font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--clay);
+}
+.record .big{
+  margin-top:10px;font-family:var(--display);font-weight:900;font-size:72px;
+  line-height:.9;letter-spacing:-.05em;color:var(--ink);white-space:nowrap;
+}
+.record p{
+  margin:14px 0 0;font-family:var(--body);font-size:15.5px;line-height:1.45;
+  color:var(--muted);text-wrap:pretty;
+}
+
+/* =========================================================
+   ENDGAME: two algorithm families side by side
+   ========================================================= */
+.endgame{
+  display:grid;grid-template-columns:1fr 1fr;
+  margin-top:30px;
+}
+.alg-panel{padding:0 40px 0 0}
+.alg-panel + .alg-panel{padding:0 0 0 42px;border-left:1.5px solid var(--ink)}
+.alg-panel .eb{
+  font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--clay);
+}
+.alg-h{
+  margin:8px 0 0;font-family:var(--display);font-weight:800;
+  font-size:56px;line-height:1;letter-spacing:-.04em;color:var(--ink);
+}
+.alg-h span{font-size:.72em;font-weight:700;color:var(--muted)}
+.alg-body{display:grid;grid-template-columns:180px minmax(0,1fr);gap:26px;margin-top:24px}
+.face-fig{margin:0}
+.face-fig .face-cube{
+  display:grid;grid-template-columns:13px repeat(3,1fr) 13px;
+  grid-template-rows:13px repeat(3,1fr) 13px;
+  gap:6px;width:180px;height:180px;
+}
+.face-cube i{display:block;background:var(--cube-gray);border-radius:4px;box-shadow:0 0 0 3px var(--cube-gap)}
+.face-cube .y{background:var(--cube-yellow)}
+.face-cube .r{background:var(--cube-red)}
+.face-cube .o{background:var(--cube-orange)}
+.face-cube .b{background:var(--cube-blue)}
+.face-cube .gr{background:var(--cube-green)}
+.face-cube .void{background:transparent;box-shadow:none}
+.face-fig figcaption{
+  margin-top:10px;font-family:var(--display);font-size:11.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.alg-list .lab{
+  font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+.alg-list ol{list-style:none;margin:16px 0 0;padding:0}
+.alg-list li + li{margin-top:15px}
+.alg-list .alg{display:block;font-family:var(--body);font-size:19px;line-height:1.25;color:var(--ink)}
+.alg-list .alg b{font-weight:700;margin-right:.55em;color:var(--clay)}
+.alg-list .why{display:block;margin-top:3px;font-family:var(--body);font-size:15px;color:var(--muted)}
+
+/* the G_0 -> G_1 marker above a phase title */
+.pair{margin:30px 0 0;font-family:var(--body);font-size:17px;color:var(--muted)}
+.pair b{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-.02em;color:var(--ink)}
+.pair .arw{color:var(--clay);margin:0 .45em}
+.pair + .title{margin-top:12px}
+
+/* =========================================================
+   SPLIT, REVERSED (cube on the right)
+   ========================================================= */
+.split.rev{grid-template-columns:minmax(0,1fr) 560px}
+
+.prose{display:flex;flex-direction:column;min-height:0}
+.prose .title{font-size:52px;line-height:1.0;letter-spacing:-.035em}
+.prose .lede{font-size:19px;line-height:1.55;margin-top:18px;text-wrap:pretty}
+
+/* the six generators, as a ribbon of tokens */
+.moves{display:flex;gap:9px;margin:28px 0 0;list-style:none;padding:0}
+.moves li{
+  min-width:54px;height:54px;display:grid;place-items:center;
+  border-radius:12px;background:var(--ink);color:var(--paper);
+  font-family:var(--display);font-size:22px;font-weight:700;line-height:1;
+}
+/* .lock = still legal in this phase, demoted to a half turn afterwards */
+.moves li.lock{background:transparent;border:1.5px dashed var(--clay);color:var(--clay);border-radius:12px}
+.moves li.key{
+  min-width:0;height:auto;max-width:160px;background:none;color:var(--muted);
+  font-family:var(--body);font-size:13.5px;font-weight:400;line-height:1.35;
+  place-items:center start;text-wrap:pretty;
+}
+
+.facts{margin:28px 0 0;display:grid;grid-template-columns:154px minmax(0,1fr);gap:0;align-items:baseline}
+.facts dt{
+  padding:11px 0;border-top:1px solid var(--rule);
+  font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+.facts dd{
+  margin:0;padding:11px 0;border-top:1px solid var(--rule);
+  font-family:var(--body);font-size:17px;line-height:1.45;color:var(--ink-2);
+;text-wrap:pretty}
+.facts dd b{font-weight:600;color:var(--ink)}
+
+/* =========================================================
+   PLATE: one number, centred
+   ========================================================= */
+.plate{
+  flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;margin-top:-16px;
+}
+.plate .eb{
+  font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--clay);margin-bottom:30px;
+}
+.plate .num{
+  font-family:var(--display);font-weight:900;font-size:250px;line-height:.85;
+  letter-spacing:-.065em;color:var(--ink);font-feature-settings:"lnum" 1;
+}
+.plate .num em{font-style:normal;font-weight:900;color:var(--clay)}
+.plate .cap{
+  margin-top:34px;max-width:56ch;font-family:var(--body);
+  font-size:20px;line-height:1.55;color:var(--ink-2);
+;text-wrap:pretty}
+.plate .cap b{font-weight:600;color:var(--ink)}
+.night .plate .num{color:var(--night-ink)}
+.night .plate .num em{color:var(--sand)}
+.night .plate .eb{color:var(--sand)}
+.night .plate .cap{color:var(--night-muted)}
+.night .plate .cap b{color:var(--night-ink)}
+
+/* =========================================================
+   FORMULA: inline display math
+   ========================================================= */
+.formula{
+  font-family:var(--body);font-size:26px;line-height:1.5;color:var(--ink-2);
+  font-variant-numeric:lining-nums;
+}
+.formula b{font-weight:600;color:var(--ink)}
+.formula .op{color:var(--faint);margin:0 .35em}
+
+/* =========================================================
+   THREE AXIOMS — outlined cards
+   ========================================================= */
+.axioms{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  margin-top:32px;border:0;
+}
+.axiom{
+  padding:26px 24px;border:1.5px solid var(--ink);border-radius:18px;
+  background:var(--paper-2);
+}
+.axiom + .axiom{padding-left:24px;border-left:1.5px solid var(--ink)}
+.axiom .n{
+  font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.2em;color:var(--clay);
+}
+.axiom h3{
+  margin:12px 0 0;font-family:var(--display);font-weight:800;
+  font-size:36px;line-height:1;letter-spacing:-.03em;color:var(--ink);
+}
+.axiom h3 em{font-style:normal;font-weight:800;color:var(--clay)}
+.axiom p{margin:14px 0 0;font-family:var(--body);font-size:16px;line-height:1.55;color:var(--ink-2);text-wrap:pretty}
+.axiom p b{font-weight:600;color:var(--ink)}
+.axiom .eg{
+  margin:12px 0 0;font-family:var(--body);font-size:15px;font-weight:500;color:var(--muted);
+  letter-spacing:.01em;
+}
+
+/* =========================================================
+   COMPARISON TABLE
+   ========================================================= */
+.cmp{width:100%;border-collapse:collapse;margin-top:26px;font-family:var(--body)}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:20px 26px 20px 0}
+.cmp thead th{
+  padding-bottom:10px;border-bottom:2px solid var(--ink);
+  font-family:var(--display);font-size:12.5px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+}
+.cmp thead th:nth-child(2){color:var(--clay)}
+.cmp thead th:nth-child(3){color:var(--teal)}
+.cmp tbody th{
+  width:196px;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--rule);
+}
+.cmp tbody td{
+  border-bottom:1px solid var(--rule);
+  font-size:18px;line-height:1.45;color:var(--ink-2);
+}
+.cmp tbody tr:last-child th,.cmp tbody tr:last-child td{border-bottom:0}
+.cmp tbody td b{font-weight:600;color:var(--ink)}
+
+/* =========================================================
+   CLOSING
+   ========================================================= */
+.close{
+  flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:70px;
+  align-items:center;
+}
+.close .line{
+  text-wrap:balance;margin:0;font-family:var(--display);font-weight:900;font-size:72px;line-height:1.0;
+  letter-spacing:-.045em;color:var(--ink);max-width:19ch;
+}
+.close-cube{height:420px}
+.close .line em{font-style:normal;font-weight:900;color:var(--clay)}
+.close .sub{
+  margin:30px 0 0;max-width:56ch;font-family:var(--body);font-size:19px;
+  line-height:1.55;color:var(--ink-2);
+;text-wrap:pretty}
+
+/* =========================================================
+   FACES: the six turns
+   ========================================================= */
+.faces{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:36px}
+.faces figure{
+  margin:0;border-radius:18px;background:var(--paper-2);
+  padding:24px 0 20px;text-align:center;
+}
+.faces b{
+  display:block;font-family:var(--display);font-size:64px;font-weight:800;
+  line-height:1;letter-spacing:-.04em;color:var(--ink);
+}
+.faces span{
+  display:block;margin-top:14px;font-family:var(--display);font-size:12.5px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+}
+
+/* =========================================================
+   COUNT: the state-space product
+   ========================================================= */
+.count{
+  display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:start;
+  margin-top:28px;
+}
+.count .term{border-top:2px solid var(--ink);padding-top:22px}
+.count .term + .term{margin-left:0}
+.count .lab{
+  display:block;font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--clay);
+}
+.count .math{
+  display:block;margin-top:16px;font-family:var(--display);font-size:44px;font-weight:800;
+  line-height:1;letter-spacing:-.04em;color:var(--ink);
+}
+.count .why{
+  display:block;margin-top:16px;font-family:var(--body);font-size:17px;
+  line-height:1.5;color:var(--ink-2);
+;text-wrap:pretty}
+.count .op{
+  font-family:var(--display);font-size:28px;font-weight:600;color:var(--faint);
+  padding:56px 32px 0;
+}
+.count .term{padding-right:28px}
+.count .term:nth-child(5){padding-right:0}
+
+.result{
+  margin-top:44px;padding-top:22px;border-top:2px solid var(--ink);
+  display:flex;align-items:baseline;justify-content:space-between;gap:40px;
+}
+.result .eq{
+  font-family:var(--display);font-size:40px;font-weight:800;line-height:1;letter-spacing:-.03em;color:var(--ink);
+  font-variant-numeric:lining-nums;
+}
+.result .eq small{font-size:20px;color:var(--muted);margin-left:.5em}
+.result.plain{border-top:0;padding-top:0;margin-top:36px;margin-bottom:24px}
+.result .note{
+  font-family:var(--display);font-size:18px;font-weight:600;color:var(--muted);white-space:nowrap;
+}
+
+/* =========================================================
+   ORBITS: dots grouped by reachability
+   ========================================================= */
+.orbits{display:flex;flex-direction:column;gap:14px;margin:30px 0 0}
+.orbits .row{display:flex;align-items:center;gap:20px}
+.orbits .tag{
+  width:82px;flex:none;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+.orbits .grp{
+  display:flex;gap:7px;padding:7px 14px;border:1.5px solid var(--ink);border-radius:40px;
+}
+.orbits .grp i{width:11px;height:11px;border-radius:50%;background:var(--olive)}
+.orbits .grp.b i{background:var(--clay)}
+.orbits .grp.c i{background:var(--teal)}
+
+/* =========================================================
+   STRIP: five positions in a row
+   ========================================================= */
+.strip{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:34px;padding-bottom:12px}
+.strip figure{
+  margin:0;display:flex;flex-direction:column;min-height:0;
+  padding:0;
+}
+.strip .box{
+  flex:1;min-height:0;border-radius:16px;background:var(--paper-2);
+}
+.strip .box canvas{display:block;width:100%;height:100%}
+.strip figcaption{padding-top:14px}
+.strip .step-no{
+  display:block;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--clay);
+}
+.strip .step-t{display:block;margin-top:8px;font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.strip .step-n{
+  display:block;margin-top:3px;font-family:var(--body);font-size:14px;color:var(--muted);
+}
+
+/* =========================================================
+   PHASE LEDGER (the animated slide)
+   ========================================================= */
+.split.wide-cube{grid-template-columns:700px minmax(0,1fr)}
+
+.phases{list-style:none;margin:26px 0 0;padding:0}
+.phases li{
+  display:grid;grid-template-columns:126px minmax(0,1fr) 38px;gap:16px;
+  align-items:baseline;padding:12px;position:relative;border-radius:12px;
+  border-top:1px solid var(--rule-soft);transition:background .3s;
+}
+.phases li:last-child{border-bottom:1px solid var(--rule-soft)}
+.phases li.on{background:var(--paper-2)}
+.phases li.on:before{
+  content:"";position:absolute;left:0;top:8px;bottom:8px;width:4px;border-radius:2px;background:var(--clay);
+}
+.phases .lbl{font-family:var(--display);font-size:15px;font-weight:600;color:var(--muted)}
+.phases li.on .lbl{color:var(--ink)}
+.phases .ms{font-family:var(--body);font-size:17px;letter-spacing:.03em;color:var(--ink-2)}
+.phases .ct{text-align:right;font-family:var(--display);font-size:17px;font-weight:600;color:var(--muted)}
+.phases li.on .ct{color:var(--clay)}
+
+.reshuffle{
+  margin-top:24px;align-self:flex-start;padding:14px 28px;border-radius:999px;
+  border:0;background:var(--ink);
+  font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--paper);cursor:pointer;
+  transition:background .25s ease,color .25s ease;
+}
+.reshuffle:hover{background:var(--clay);color:var(--paper)}
+.reshuffle:active{transform:translateY(1px)}
+
+/* =========================================================
+   HUD
+   ========================================================= */
+.hud{position:fixed;inset:0;pointer-events:none;font-family:var(--display)}
+.hud .count{
+  position:absolute;right:30px;bottom:22px;
+  font-size:10px;letter-spacing:.28em;color:#8d8a80;
+}
+.hud .count b{font-weight:600;color:#e8e2d2}
+.hud .hint{
+  position:absolute;left:30px;bottom:22px;
+  font-size:9px;letter-spacing:.24em;color:#8d8a80;text-transform:uppercase;
+  transition:opacity .8s ease;
+}
+.hud .hint.gone{opacity:0}
+.hud .bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.07)}
+.hud .fill{height:100%;width:0;background:var(--clay);transition:width .45s ease}
+body.bare .hud{display:none}
+body.bare .slide{transition:none}
+
+@media (prefers-reduced-motion:reduce){
+  .slide,.hud .fill{transition:none}
+}
+
+</style>
+</head>
+<body>
+<main class="stage">
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">I</span><span>The mathematics of the Rubik's cube</span><span class="line"></span></div>
+
+      <div class="cover">
+        <div>
+          <p class="eyebrow">An eight-minute argument</p>
+          <h1 class="display">The Cube,<br>the <em>Group</em>.</h1>
+          <p class="sub">Every scramble belongs to one enormous group. Solving it means walking down a chain of subgroups.</p>
+          <p class="byline">Fewest Moves &middot; Four-Phase Method</p>
+        </div>
+        <figure class="cover-cube">
+          <canvas class="cube-canvas" data-fit=".9"></canvas>
+          <figcaption class="cap">G&#8320; &#183; 4.33 &times; 10&#185;&#8313; states</figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span class="foot-note">G&#8320; &rarr; G&#8321; &rarr; G&#8322; &rarr; G&#8323; &rarr; e</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">II</span><span>The event</span><span class="line"></span></div>
+
+      <div class="event-head">
+        <div>
+          <h1 class="title">Fewest moves, not fastest <em>fingers</em>.</h1>
+          <p class="lede">Fewest Moves is the speedcubing event with the speed taken out: one scramble, one hour, a pen. You hand in a written sequence, and the score is how few moves it contains.</p>
+        </div>
+        <aside class="record">
+          <span class="eb">World record single</span>
+          <div class="big">16 moves</div>
+          <p>A five-way WCA tie (first set by Sebastiano Tronto in 2019)</p>
+        </aside>
+      </div>
+
+      <div class="steps">
+        <article class="step">
+          <div class="idx">01</div>
+          <h3>One hour</h3>
+          <span class="abbr">The clock</span>
+          <p>One scramble, one cube, sixty minutes &mdash; and <b>no computer</b>.</p>
+        </article>
+        <article class="step">
+          <div class="idx">02</div>
+          <h3>One page</h3>
+          <span class="abbr">The notation</span>
+          <p>Nothing counts unless it is written down, then read back by a judge.</p>
+        </article>
+        <article class="step">
+          <div class="idx">03</div>
+          <h3>One number</h3>
+          <span class="abbr">The score</span>
+          <p>A half turn counts as one move. The winner is not the quickest hand but the <b>shortest product</b>.</p>
+        </article>
+        <article class="step">
+          <div class="idx">04</div>
+          <h3>The wall</h3>
+          <span class="abbr">Why it is hard</span>
+          <p>An hour is generous to think in, hopeless to <b>search</b> in.</p>
+        </article>
+      </div>
+
+      <div class="takeaway">
+        <p>The question is not <i>how do I solve it</i> &mdash; every competitor can. It is <b>what is the shortest path</b>, and that is a question about a graph.</p>
+        <span class="tick">the shortest path</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Fewest Moves &middot; WCA</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">II</span><span>The event</span><span class="line"></span></div>
+
+      <h1 class="title">Four passes, no <em>searching</em>.</h1>
+      <p class="lede">A speedcuber does not explore the state space. CFOP replaces search with a library of memorised sequences, applied in a fixed order.</p>
+
+      <div class="steps">
+        <article class="step">
+          <div class="idx">01</div>
+          <h3>Cross</h3>
+          <span class="abbr">Four bottom edges</span>
+          <p>Four bottom edges, at most eight moves, chosen <b>by eye</b>.</p>
+        </article>
+        <article class="step">
+          <div class="idx">02</div>
+          <h3>F2L</h3>
+          <span class="abbr">First two layers</span>
+          <p>Corner and edge paired, then slotted. Two layers <b>at once</b>.</p>
+        </article>
+        <article class="step">
+          <div class="idx">03</div>
+          <h3>OLL</h3>
+          <span class="abbr">Orient last layer</span>
+          <p>One of 57 algorithms makes the top face <b>uniform</b>.</p>
+        </article>
+        <article class="step">
+          <div class="idx">04</div>
+          <h3>PLL</h3>
+          <span class="abbr">Permute last layer</span>
+          <p>One of 21 algorithms sorts it. Recognition, then <b>one burst</b>.</p>
+        </article>
+      </div>
+
+      <div class="takeaway">
+        <p>A hundred-odd sequences stand in for <b>4.33 &times; 10&#185;&#8313; positions</b>. The cube is chosen by memory, not by mathematics.</p>
+        <span class="tick">&#8776; 55 moves</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Cross &rarr; F2L &rarr; OLL &rarr; PLL</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">II</span><span>The event</span><span class="line"></span></div>
+
+      <h1 class="title">Optimizing the <em>endgame</em>.</h1>
+      <p class="lede">Orientation and permutation: choose the sequence that fits your flow.</p>
+
+      <div class="endgame">
+        <div class="alg-panel">
+          <span class="eb">01 Orientation</span>
+          <h2 class="alg-h">OLL <span>45</span></h2>
+
+          <div class="alg-body">
+            <figure class="face-fig">
+              <div class="face-cube" role="img" aria-label="OLL 45: yellow top face in a T shape, grey elsewhere">
+                <i class="void"></i><i class="s"></i><i class="y"></i><i class="s"></i><i class="void"></i>
+                <i class="y"></i><i class="s"></i><i class="s"></i><i class="y"></i><i class="s"></i>
+                <i class="s"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="s"></i>
+                <i class="y"></i><i class="s"></i><i class="s"></i><i class="y"></i><i class="s"></i>
+                <i class="void"></i><i class="s"></i><i class="y"></i><i class="s"></i><i class="void"></i>
+              </div>
+              <figcaption>Select algorithms</figcaption>
+            </figure>
+
+            <div class="alg-list">
+              <span class="lab">Select algorithms</span>
+              <ol>
+                <li><span class="alg"><b>1.</b>F R U R&prime; U&prime; F&prime;</span><span class="why">Standard sequence</span></li>
+                <li><span class="alg"><b>2.</b>y R&prime; F&prime; U&prime; F U R</span><span class="why">Angle alternative</span></li>
+                <li><span class="alg"><b>3.</b>y2 f U R U&prime; R&prime; f&prime;</span><span class="why">Double-outer variation</span></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="alg-panel">
+          <span class="eb">02 Permutation</span>
+          <h2 class="alg-h">H Perm</h2>
+
+          <div class="alg-body">
+            <figure class="face-fig">
+              <div class="face-cube" role="img" aria-label="H Perm: solved yellow top face, opposite edges swapped in pairs">
+                <i class="void"></i><i class="b"></i><i class="gr"></i><i class="b"></i><i class="void"></i>
+                <i class="r"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="o"></i>
+                <i class="o"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="r"></i>
+                <i class="r"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="o"></i>
+                <i class="void"></i><i class="gr"></i><i class="b"></i><i class="gr"></i><i class="void"></i>
+              </div>
+              <figcaption>Select algorithms</figcaption>
+            </figure>
+
+            <div class="alg-list">
+              <span class="lab">Select algorithms</span>
+              <ol>
+                <li><span class="alg"><b>1.</b>M2 U&prime; M2 U2&prime; M2 U&prime; M2</span><span class="why">Standard slice-sequence</span></li>
+                <li><span class="alg"><b>2.</b>M2&prime; U&prime; M2&prime; U2&prime; M2&prime; U&prime; M2&prime;</span><span class="why">Alternative U&prime; fingertrick</span></li>
+                <li><span class="alg"><b>3.</b>R2 U2 R U2 R2 U2 R2 U2 R U2 R2</span><span class="why">RU-only variation</span></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>CFOP method &middot; OLL &amp; PLL</span>
+        <span>Algorithms</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
+
+      <h1 class="title">Six turns, and everything they <em>generate</em>.</h1>
+      <p class="lede">Name every quarter turn after the face it moves. That is the whole alphabet &mdash; a cube position is nothing but the product of the letters that produce it.</p>
+
+      <div class="faces">
+        <figure><b>U</b><span>Up</span></figure>
+        <figure><b>D</b><span>Down</span></figure>
+        <figure><b>L</b><span>Left</span></figure>
+        <figure><b>R</b><span>Right</span></figure>
+        <figure><b>F</b><span>Front</span></figure>
+        <figure><b>B</b><span>Back</span></figure>
+      </div>
+
+      <p class="lede" style="margin-top:38px;max-width:78ch">
+        A prime reverses a turn; a two doubles it. Sequences read left to right, so <b>U R F&sup2;</b> is Up, then Right, then Front twice.
+      </p>
+
+      <div class="takeaway">
+        <p>Every product of these six letters is the Rubik&rsquo;s cube group. We will call it <b>G</b>.</p>
+        <span class="tick">G = &lang;U, D, L, R, F, B&rang;</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Six generators</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
+
+      <h1 class="title">A group is a set that <em>closes</em>.</h1>
+      <p class="lede">Take every sequence of the six turns. The distinct positions you reach form the cube group.</p>
+
+      <div class="axioms">
+        <article class="axiom">
+          <div class="n">I</div>
+          <h3>Closure</h3>
+          <p>Turn, then turn again. The result is still a position of the cube.</p>
+          <p class="eg">U &middot; R&prime; &middot; D&sup2; &isin; G</p>
+        </article>
+        <article class="axiom">
+          <div class="n">II</div>
+          <h3>Inverses</h3>
+          <p>Every turn can be undone: U then U&prime; leaves the cube untouched.</p>
+          <p class="eg">U &middot; U&prime; = e</p>
+        </article>
+        <article class="axiom">
+          <div class="n">III</div>
+          <h3>Identity</h3>
+          <p>The do-nothing move is an element too: the solved cube.</p>
+          <p class="eg">U<sup>4</sup> = e &nbsp;&middot;&nbsp; a turn has order four</p>
+        </article>
+      </div>
+
+      <div class="takeaway">
+        <p>Nothing escapes the set. A scramble and a solution are the <b>same object</b> &mdash; so <i>shortest</i> becomes a question about distance.</p>
+        <span class="tick">G is a group</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Closure &middot; inverse &middot; identity</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
+
+      <h1 class="title">Forty-three <em>quintillion</em>.</h1>
+      <p class="lede">The number is not a mystery. Eight corners and twelve edges, each with a position and an orientation &mdash; divided by the two constraints that make a cube legal.</p>
+
+      <div class="count">
+        <div class="term">
+          <span class="lab">Corners</span>
+          <span class="math">8! &middot; 3<sup>7</sup></span>
+          <span class="why">Eight corners in any order. Seven may twist; the eighth is forced.</span>
+        </div>
+        <div class="op">&times;</div>
+        <div class="term">
+          <span class="lab">Edges</span>
+          <span class="math">12! &middot; 2<sup>11</sup></span>
+          <span class="why">Twelve edges in any order. Eleven may flip; the twelfth is forced.</span>
+        </div>
+        <div class="op">&divide;</div>
+        <div class="term">
+          <span class="lab">Parity</span>
+          <span class="math">2</span>
+          <span class="why">Only half are reachable. A single swap is no legal move.</span>
+        </div>
+      </div>
+
+      <div class="result plain">
+        <span class="eq">= 43 252 003 274 489 856 000</span>
+        <span class="note">&asymp; 4.33 &times; 10<sup>19</sup></span>
+      </div>
+
+      <div class="takeaway">
+        <p>A graph that large is not something anyone can look at. Any method that wins here has to avoid looking.</p>
+        <span class="tick">one graph, 4.3 &times; 10<sup>19</sup> vertices</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>The vertex count of the Cayley graph</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
+
+      <h1 class="title">Solving is a <em>descent</em>.</h1>
+      <p class="lede">Each subgroup allows fewer turns, freezing one more degree of freedom.</p>
+
+      <div class="split">
+        <figure class="cube-stage">
+          <canvas class="cube-canvas" data-fit=".8" data-alg="U L2 D R2 B2 U2 F2 D L2 U2 R2"></canvas>
+          <span class="tag">G&#8322;</span>
+          <figcaption class="cap">A state of G<sub>2</sub></figcaption>
+        </figure>
+
+        <div class="chain-wrap">
+          <div class="chain-head"><span>Group</span><span>Generators</span><span>| G<sub>i</sub> |</span></div>
+          <ol class="chain">
+            <li>
+              <span class="g">G&#8320;</span>
+              <span class="gen">⟨U, D, L, R, F, B⟩<span class="meaning">every scramble lives here</span></span>
+              <span class="n">4.33 &times; 10&#185;&#8313;<small>&mdash;</small></span>
+            </li>
+            <li>
+              <span class="g">G&#8321;</span>
+              <span class="gen">⟨U, D, L, R, F&#178;, B&#178;⟩<span class="meaning">all twelve edges oriented</span></span>
+              <span class="n">2.11 &times; 10&#185;&#8310;<small>2 048</small></span>
+            </li>
+            <li class="on">
+              <span class="g">G&#8322;</span>
+              <span class="gen">⟨U, D, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning">all eight corners untwisted</span></span>
+              <span class="n">1.95 &times; 10&#185;&#8304;<small>1 082 565</small></span>
+            </li>
+            <li>
+              <span class="g">G&#8323;</span>
+              <span class="gen">⟨U&#178;, D&#178;, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning">every block held in its orbit</span></span>
+              <span class="n">663 552<small>29 400</small></span>
+            </li>
+            <li>
+              <span class="g">G&#8324;</span>
+              <span class="gen">{ e }<span class="meaning">the solved cube</span></span>
+              <span class="n">1<small>663 552</small></span>
+            </li>
+          </ol>
+          <p class="chain-note">The small figure is the quotient <b>|G<sub>i&minus;1</sub> / G<sub>i</sub>|</b> &mdash; the space one phase actually has to search.</p>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G&#8320; &rarr; G&#8321; &rarr; G&#8322; &rarr; G&#8323; &rarr; e</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">IV</span><span>Four smaller groups</span><span class="line"></span></div>
+
+      <div class="split rev">
+        <div class="prose">
+          <p class="pair"><b>G<sub>0</sub></b><span class="arw">&rarr;</span><b>G<sub>1</sub></b></p>
+          <h1 class="title">Stop the edges from <em>flipping</em>.</h1>
+          <p class="lede">Ban the quarter turns of F and B. With those two gone, no sequence can leave an edge turned on its own axis &mdash; and 43 quintillion positions collapse by a factor of 2,048.</p>
+
+          <ul class="moves">
+            <li>U</li><li>D</li><li>L</li><li>R</li>
+            <li class="lock">F</li><li class="lock">B</li>
+            <li class="key">Legal now, half turn only after this phase</li>
+          </ul>
+
+          <dl class="facts">
+            <dt>Frozen</dt>
+            <dd>the orientation of all twelve edges</dd>
+            <dt>Still free</dt>
+            <dd>every corner, and every permutation</dd>
+            <dt>Search</dt>
+            <dd><b>2 048</b> edge orientations</dd>
+            <dt>Worst case</dt>
+            <dd>7 moves</dd>
+          </dl>
+        </div>
+
+        <figure class="cube-stage">
+          <canvas class="cube-canvas phase" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U" data-moves="U F B D' B" data-mark="g1"></canvas>
+          <span class="tag">G<sub>1</sub></span>
+          <div class="tally"><div><span>Edges oriented</span><b data-c="edges">6 / 12</b></div></div>
+          <figcaption class="cap">Still scrambled &mdash; but no edge is flipped</figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G<sub>0</sub> &rarr; G<sub>1</sub> &middot; 2 048 cosets</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">IV</span><span>Four smaller groups</span><span class="line"></span></div>
+
+      <div class="split rev">
+        <div class="prose">
+          <p class="pair"><b>G<sub>1</sub></b><span class="arw">&rarr;</span><b>G<sub>2</sub></b></p>
+          <h1 class="title">Then stop the corners from <em>twisting</em>.</h1>
+          <p class="lede">Now L and R may only be half-turned. That fixes the twist of all eight corners, and traps the four middle-slice edges in the middle slice, where they can trade places only among themselves.</p>
+
+          <ul class="moves">
+            <li>U</li><li>D</li>
+            <li class="lock">L</li><li class="lock">R</li>
+            <li>F&sup2;</li><li>B&sup2;</li>
+            <li class="key">Legal now, half turn only after this phase</li>
+          </ul>
+
+          <dl class="facts">
+            <dt>Frozen</dt>
+            <dd>the twist of all eight corners; the middle-slice edges stay in the middle</dd>
+            <dt>Still free</dt>
+            <dd>every permutation that respects the slices</dd>
+            <dt>Search</dt>
+            <dd><b>1 082 565</b> corner and slice states</dd>
+            <dt>Worst case</dt>
+            <dd>10 moves</dd>
+          </dl>
+        </div>
+
+        <figure class="cube-stage">
+          <canvas class="cube-canvas phase" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B" data-moves="U' L U' R2 U D' B2 R" data-mark="g2"></canvas>
+          <span class="tag">G<sub>2</sub></span>
+          <div class="tally">
+            <div><span>Corners flat</span><b data-c="corners">5 / 8</b></div>
+            <div><span>Middle slice</span><b class="t-teal" data-c="slice">1 / 4</b></div>
+          </div>
+          <figcaption class="cap">Corners flat, middle slice closed</figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G<sub>1</sub> &rarr; G<sub>2</sub> &middot; 1 082 565 cosets</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">IV</span><span>Four smaller groups</span><span class="line"></span></div>
+
+      <div class="split rev">
+        <div class="prose">
+          <p class="pair"><b>G<sub>2</sub></b><span class="arw">&rarr;</span><b>G<sub>3</sub></b></p>
+          <h1 class="title">Half turns only: every piece is <em>trapped</em>.</h1>
+          <p class="lede">With all six faces limited to 180&deg;, no piece can change orbit. The eight corners divide into two tetrahedra of four; the twelve edges fall into three groups of four. Every piece may move &mdash; but only inside its own set.</p>
+
+          <ul class="moves">
+            <li class="lock">U</li><li class="lock">D</li>
+            <li>L&sup2;</li><li>R&sup2;</li>
+            <li>F&sup2;</li><li>B&sup2;</li>
+            <li class="key">Legal now, half turn only after this phase</li>
+          </ul>
+
+          <div class="orbits">
+            <div class="row"><span class="tag">Corners</span>
+              <span class="grp a"><i></i><i></i><i></i><i></i></span>
+              <span class="grp b"><i></i><i></i><i></i><i></i></span>
+            </div>
+            <div class="row"><span class="tag">Edges</span>
+              <span class="grp a"><i></i><i></i><i></i><i></i></span>
+              <span class="grp b"><i></i><i></i><i></i><i></i></span>
+              <span class="grp c"><i></i><i></i><i></i><i></i></span>
+            </div>
+          </div>
+
+          <dl class="facts">
+            <dt>Search</dt>
+            <dd><b>29 400</b> orbit-respecting states</dd>
+            <dt>Worst case</dt>
+            <dd>13 moves</dd>
+          </dl>
+        </div>
+
+        <figure class="cube-stage">
+          <canvas class="cube-canvas phase" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B U' L U' R2 U D' B2 R" data-moves="U2 R2 L2 F2 R2 B2 U" data-mark="g3"></canvas>
+          <span class="tag">G<sub>3</sub></span>
+          <div class="tally"><div><span>Pieces in orbit</span><b data-c="orbit">12 / 20</b></div></div>
+          <figcaption class="cap">Every piece back inside its orbit</figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G<sub>2</sub> &rarr; G<sub>3</sub> &middot; 29 400 cosets</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">IV</span><span>Four smaller groups</span><span class="line"></span></div>
+
+      <div class="split rev">
+        <div class="prose">
+          <p class="pair"><b>G<sub>3</sub></b><span class="arw">&rarr;</span><b>G<sub>4</sub></b></p>
+          <h1 class="title">Finishing is a <em>shuffle</em> inside the orbits.</h1>
+          <p class="lede">663,552 arrangements are left, and every one is reachable with half turns alone. This phase is blind to how the scramble began &mdash; it only walks the last group down to a single point.</p>
+
+          <ul class="moves">
+            <li>U&sup2;</li><li>D&sup2;</li>
+            <li>L&sup2;</li><li>R&sup2;</li>
+            <li>F&sup2;</li><li>B&sup2;</li>
+          </ul>
+
+          <dl class="facts">
+            <dt>Frozen</dt>
+            <dd>everything except the order inside each orbit</dd>
+            <dt>Still free</dt>
+            <dd>which piece of a group of four sits where</dd>
+            <dt>Destination</dt>
+            <dd><b>G<sub>4</sub> = { e }</b> &mdash; one state only</dd>
+            <dt>Worst case</dt>
+            <dd>15 moves</dd>
+          </dl>
+        </div>
+
+        <figure class="cube-stage">
+          <canvas class="cube-canvas phase" data-fit=".88" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B U' L U' R2 U D' B2 R U2 R2 L2 F2 R2 B2 U" data-moves="U2 D2 F2 R2 U2 F2 L2 B2 R2" data-mark="g4"></canvas>
+          <span class="tag">G<sub>4</sub></span>
+          <div class="tally"><div><span>Pieces home</span><b data-c="home">6 / 20</b></div></div>
+          <figcaption class="cap">The only element of G<sub>4</sub></figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G<sub>3</sub> &rarr; e &middot; 663 552 cosets</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">V</span><span>The search</span><span class="line"></span></div>
+
+      <h1 class="title">You do not search 4.3&nbsp;&times;&nbsp;10<sup>19</sup>. You search <em>cosets</em>.</h1>
+      <p class="lede">Each phase asks one small question: how far am I from the next group?</p>
+
+      <div class="axioms">
+        <article class="axiom">
+          <div class="n">I</div>
+          <h3>Collapse</h3>
+          <p>Distance to G<sub>1</sub> depends only on which coset you occupy &mdash; the 2,048 edge orientations.</p>
+          <p class="eg">h<sub>1</sub> : G &rarr; {0 &hellip; 7}</p>
+        </article>
+        <article class="axiom">
+          <div class="n">II</div>
+          <h3>Tabulate</h3>
+          <p>A breadth-first search fills in that distance for every node, once.</p>
+          <p class="eg">|quotient| = 2 048</p>
+        </article>
+        <article class="axiom">
+          <div class="n">III</div>
+          <h3>Descend</h3>
+          <p>Solving is then downhill: take any move that lowers the distance, until it reaches zero.</p>
+          <p class="eg">h = 0 &nbsp;&hArr;&nbsp; the cube is inside the next group</p>
+        </article>
+      </div>
+
+      <div class="takeaway">
+        <p>The table is not a heuristic. A quotient distance of zero means the cube <b>really has landed</b> in the next group.</p>
+        <span class="tick">repeat four times</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Quotient &middot; BFS &middot; descent</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">V</span><span>The search</span><span class="line"></span></div>
+
+      <h1 class="title">One scramble, four <em>phases</em>.</h1>
+      <p class="lede">A real 29-move solution, found by exactly the downhill walk just described. Watch the cube become progressively less scrambled &mdash; and notice that the last frame is not the scramble played backwards.</p>
+
+      <div class="strip">
+        <figure>
+          <div class="box"><canvas class="cube-canvas" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U"></canvas></div>
+          <figcaption>
+            <span class="step-t">The scramble</span>
+            <span class="step-n">13 moves, any position in G</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="box"><canvas class="cube-canvas" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B"></canvas></div>
+          <figcaption>
+            <span class="step-t">G<sub>0</sub> &rarr; G<sub>1</sub></span>
+            <span class="step-n">+5 &middot; edges oriented</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="box"><canvas class="cube-canvas" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B U' L U' R2 U D' B2 R"></canvas></div>
+          <figcaption>
+            <span class="step-t">G<sub>1</sub> &rarr; G<sub>2</sub></span>
+            <span class="step-n">+8 &middot; corners flat</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="box"><canvas class="cube-canvas" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B U' L U' R2 U D' B2 R U2 R2 L2 F2 R2 B2 U"></canvas></div>
+          <figcaption>
+            <span class="step-t">G<sub>2</sub> &rarr; G<sub>3</sub></span>
+            <span class="step-n">+7 &middot; orbits locked</span>
+          </figcaption>
+        </figure>
+        <figure>
+          <div class="box"><canvas class="cube-canvas" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U U F B D' B U' L U' R2 U D' B2 R U2 R2 L2 F2 R2 B2 U U2 D2 F2 R2 U2 F2 L2 B2 R2"></canvas></div>
+          <figcaption>
+            <span class="step-t">G<sub>3</sub> &rarr; G<sub>4</sub></span>
+            <span class="step-n">+9 &middot; solved</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="takeaway">
+        <p>Twenty-nine moves, four searches, one pass. At no point did the solver look at the scramble: it only asked, again and again, <b>how far am I from the next group?</b></p>
+        <span class="tick">29 moves</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>5 + 8 + 7 + 9 = 29</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">V</span><span>The search</span><span class="line"></span></div>
+
+      <div class="split wide-cube">
+        <figure class="cube-stage">
+          <canvas class="cube-canvas demo" data-fit=".9" data-alg="U R F2 D B' L2 U' F R2 D2 L B2 U"></canvas>
+          <span class="tag" id="demoTag">G<sub>0</sub></span>
+          <figcaption class="cap live"><span id="demoNow">the scramble</span></figcaption>
+        </figure>
+
+        <div class="prose">
+          <p class="pair"><b>G<sub>0</sub></b><span class="arw">&rarr;</span><b>G<sub>4</sub></b></p>
+          <h1 class="title">Watch one solution <em>happen</em>.</h1>
+          <p class="lede">A fresh scramble every round. It plays in, then the solution walks back down &mdash; nothing is rewound.</p>
+
+          <ol class="phases">
+            <li data-moves="U F B D' B">
+              <span class="lbl">G<sub>0</sub> &rarr; G<sub>1</sub></span>
+              <span class="ms"></span>
+              <span class="ct"></span>
+            </li>
+            <li data-moves="U' L U' R2 U D' B2 R">
+              <span class="lbl">G<sub>1</sub> &rarr; G<sub>2</sub></span>
+              <span class="ms"></span>
+              <span class="ct"></span>
+            </li>
+            <li data-moves="U2 R2 L2 F2 R2 B2 U">
+              <span class="lbl">G<sub>2</sub> &rarr; G<sub>3</sub></span>
+              <span class="ms"></span>
+              <span class="ct"></span>
+            </li>
+            <li data-moves="U2 D2 F2 R2 U2 F2 L2 B2 R2">
+              <span class="lbl">G<sub>3</sub> &rarr; G<sub>4</sub></span>
+              <span class="ms"></span>
+              <span class="ct"></span>
+            </li>
+          </ol>
+
+          <button class="reshuffle" id="demoShuffle" type="button">New scramble</button>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Recomputed live from the quotient tables</span>
+      </div>
+    </div>
+  </section>
+<section class="slide night">
+    <div class="frame">
+      <div class="kicker"><span class="no">V</span><span>The worst case</span><span class="line"></span></div>
+
+      <div class="plate">
+        <span class="eb">God&rsquo;s number</span>
+        <div class="num">20</div>
+        <p class="cap">No position is further than twenty half turns from solved. <b>Some need all twenty.</b> Proved in 2010 by splitting the graph into 2.2 billion cosets. In the quarter-turn metric the answer is 26.</p>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>The diameter of the Cayley graph</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">VI</span><span>What it buys us</span><span class="line"></span></div>
+
+      <h1 class="title">Same group, two different <em>budgets</em>.</h1>
+      <p class="lede">Computation buys moves; memory buys seconds.</p>
+
+      <table class="cmp">
+        <thead>
+          <tr><th></th><th>Thistlethwaite</th><th>CFOP</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Strategy</th>
+            <td>Four exact searches on quotients</td>
+            <td>Four stages, each a memorised library</td>
+          </tr>
+          <tr>
+            <th>Precomputed</th>
+            <td>distance tables &mdash; <b>2 048</b> to <b>663 552</b> nodes</td>
+            <td>about <b>80 algorithms</b> &mdash; 57 for OLL, 21 for PLL</td>
+          </tr>
+          <tr>
+            <th>Bottleneck</th>
+            <td>the search &mdash; over in milliseconds</td>
+            <td>recognition &mdash; decided in a second</td>
+          </tr>
+          <tr>
+            <th>Move count</th>
+            <td>at most 45, usually around 30</td>
+            <td>around 55 in a fast solve</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="takeaway">
+        <p>The chain makes the machine fast; the repertoire makes the human fast. Only one is doing group theory &mdash; and the other wins by <b>never having to think about it</b>.</p>
+        <span class="tick">&le; 45 &nbsp;vs&nbsp; &asymp; 55</span>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>Search &middot; versus &middot; memory</span>
+      </div>
+    </div>
+  </section>
+<section class="slide">
+    <div class="frame">
+      <div class="kicker"><span class="no">VI</span><span>What it buys us</span><span class="line"></span></div>
+
+      <div class="close">
+        <div>
+          <p class="line">Every solve is a walk down a <em>chain</em>.</p>
+          <p class="sub">Six turns generate 43 quintillion positions. Four nested subgroups cut that into four searches of a few thousand steps each. Nothing about the cube becomes easy &mdash; it becomes finite, and finite is enough.</p>
+        </div>
+        <figure class="cube-stage close-cube">
+          <canvas class="cube-canvas" data-fit=".76"></canvas>
+          <span class="tag">G<sub>4</sub></span>
+          <figcaption class="cap">Back where it started</figcaption>
+        </figure>
+      </div>
+
+      <div class="foot">
+        <span>Abstract Algebra &middot; 2026</span>
+        <span>G<sub>0</sub> &rarr; G<sub>1</sub> &rarr; G<sub>2</sub> &rarr; G<sub>3</sub> &rarr; e</span>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+/* Deck navigation. Every slide page is a 1600x900 stage scaled to fit. */
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  if (!slides.length) return;
+  const stage = document.querySelector('.stage');
+  const pad = n => String(n).padStart(2, '0');
+  let i = 0;
+
+  /* one nav bar per page, built from the chapter label already on it */
+  const SECTIONS = [['Event', 'II'], ['Group', 'III'], ['Phases', 'IV'], ['Search', 'V'], ['Close', 'VI']];
+  for (const s of slides) {
+    const no = s.querySelector('.kicker .no')?.textContent.trim() || '';
+    const bar = document.createElement('div');
+    bar.className = 'topbar';
+    bar.innerHTML =
+      '<span class="brand">The Cube</span>' +
+      '<nav class="tabs">' +
+      SECTIONS.map(([t, r]) => `<span class="tab${r === no ? ' on' : ''}">${t}</span>`).join('') +
+      '</nav><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span>';
+    s.querySelector('.frame')?.prepend(bar);
+  }
+
+  const hud = document.createElement('div');
+  hud.className = 'hud';
+  hud.innerHTML =
+    '<div class="hint">&#8592; &#8594; &middot; space &middot; click &middot; f</div>' +
+    '<div class="count"></div>' +
+    '<div class="bar"><div class="fill"></div></div>';
+  document.body.appendChild(hud);
+  const count = hud.querySelector('.count');
+  /* the key hint is scaffolding, not content: retire it after 6s */
+  setTimeout(() => hud.querySelector('.hint').classList.add('gone'), 6000);
+  const fill = hud.querySelector('.fill');
+
+  function fit() {
+    const s = Math.min(innerWidth / 1600, innerHeight / 900);
+    stage.style.setProperty('--s', s);
+  }
+  addEventListener('resize', fit);
+  fit();
+
+  function go(n) {
+    const from = slides[i];
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    const to = slides[i];
+    slides.forEach(s => s.classList.remove('leaving'));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    if (from && from !== to) {
+      /* fade the old page out over the new one instead of dipping to the
+         background between them */
+      from.classList.add('leaving');
+      setTimeout(() => {
+        if (from.classList.contains('leaving')) from.classList.remove('leaving');
+      }, 460);
+    }
+    count.innerHTML = '<b>' + pad(i + 1) + '</b> / ' + pad(slides.length);
+    fill.style.width = (100 * (i + 1) / slides.length) + '%';
+    document.dispatchEvent(new CustomEvent('slide', { detail: { index: i, el: slides[i] } }));
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  function fullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.();
+  }
+
+  addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ':
+        e.preventDefault(); go(i + 1); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        e.preventDefault(); go(i - 1); break;
+      case 'Home': e.preventDefault(); go(0); break;
+      case 'End': e.preventDefault(); go(slides.length - 1); break;
+      case 'f': case 'F': fullscreen(); break;
+    }
+  });
+
+  /* click-to-advance: right two thirds forward, left third back */
+  addEventListener('click', e => {
+    if (e.target.closest('a, button')) return;
+    go(i + (e.clientX > innerWidth / 3 ? 1 : -1));
+  });
+
+  const q = new URLSearchParams(location.search);
+  if (q.has('bare')) document.body.classList.add('bare');
+  const m = location.hash.match(/^#(\d+)/);
+  go(Math.max(0, (q.has('s') ? +q.get('s') : m ? +m[1] : 1) - 1));
+
+  window.DECK = { go, get index() { return i; }, count: slides.length };
+})();
+
+</script>
+<script>
+/* Thistlethwaite's four-phase solver.
+ *
+ *   G0 = <U,D,L,R,F,B> -> G1 = <U,D,L,R,F^2,B^2>
+ *   -> G2 = <U,D,L^2,R^2,F^2,B^2> -> G3 = <U^2,D^2,L^2,R^2,F^2,B^2> -> G4 = {e}
+ *
+ * Each phase is an IDA* search over the real cube state, driven by pruning
+ * tables built at load time from BFS on quotient coordinates. The scramble is
+ * never read: the path is found, not inverted.
+ *
+ * Corner order: URF UFL ULB UBR DFR DLF DBL DRB
+ * Edge order:   UR UF UL UB DR DF DL DB FR FL BL BR
+ */
+let THISTLE = null;
+function initThistle() {
+  if (THISTLE) return THISTLE;
+  THISTLE = (() => {
+  const FACES = ['U', 'R', 'F', 'D', 'L', 'B'];
+
+  const Q = {
+    U: { cp: [3,0,1,2,4,5,6,7], co: [0,0,0,0,0,0,0,0],
+         ep: [3,0,1,2,4,5,6,7,8,9,10,11], eo: [0,0,0,0,0,0,0,0,0,0,0,0] },
+    R: { cp: [4,1,2,0,7,5,6,3], co: [2,0,0,1,1,0,0,2],
+         ep: [8,1,2,3,11,5,6,7,4,9,10,0], eo: [0,0,0,0,0,0,0,0,0,0,0,0] },
+    F: { cp: [1,5,2,3,0,4,6,7], co: [1,2,0,0,2,1,0,0],
+         ep: [0,9,2,3,4,8,6,7,1,5,10,11], eo: [0,1,0,0,0,1,0,0,1,1,0,0] },
+    D: { cp: [0,1,2,3,5,6,7,4], co: [0,0,0,0,0,0,0,0],
+         ep: [0,1,2,3,5,6,7,4,8,9,10,11], eo: [0,0,0,0,0,0,0,0,0,0,0,0] },
+    L: { cp: [0,2,6,3,4,1,5,7], co: [0,1,2,0,0,2,1,0],
+         ep: [0,1,10,3,4,5,9,7,8,2,6,11], eo: [0,0,0,0,0,0,0,0,0,0,0,0] },
+    B: { cp: [0,1,3,7,4,5,2,6], co: [0,0,1,2,0,0,2,1],
+         ep: [0,1,2,11,4,5,6,10,8,9,3,7], eo: [0,0,0,1,0,0,0,1,0,0,1,1] },
+  };
+
+  const solved = () => ({ cp: [0,1,2,3,4,5,6,7], co: [0,0,0,0,0,0,0,0],
+                          ep: [0,1,2,3,4,5,6,7,8,9,10,11], eo: [0,0,0,0,0,0,0,0,0,0,0,0] });
+
+  const step = (s, m) => {
+    const cp = [], co = [], ep = [], eo = [];
+    for (let i = 0; i < 8; i++) { cp[i] = s.cp[m.cp[i]]; co[i] = (s.co[m.cp[i]] + m.co[i]) % 3; }
+    for (let i = 0; i < 12; i++) { ep[i] = s.ep[m.ep[i]]; eo[i] = (s.eo[m.ep[i]] + m.eo[i]) % 2; }
+    return { cp, co, ep, eo };
+  };
+
+  /* 18 moves: quarter, half, three-quarter, each tagged with its face. */
+  const MOVES = [], TOKENS = [];
+  const compose = (a, b) => step(a, b);           // a then b as one permutation
+  for (const f of FACES) {
+    const q = Q[f];
+    const q2 = compose(q, q), q3 = compose(q2, q);
+    [[q, 1], [q2, 2], [q3, 3]].forEach(([m, k]) => {
+      MOVES.push({ f, k, m });
+      TOKENS.push(f + (k === 2 ? '²' : k === 3 ? '′' : ''));
+    });
+  }
+  const faceIdx = MOVES.map(x => FACES.indexOf(x.f));
+
+  /* ---------- ranking ---------- */
+  const FACT = [1,1,2,6,24,120,720,5040,40320];
+  const rankPerm = p => {
+    const n = p.length;
+    let r = 0;
+    for (let i = 0; i < n; i++) {
+      let c = 0;
+      for (let j = i + 1; j < n; j++) if (p[j] < p[i]) c++;
+      r += c * FACT[n - 1 - i];
+    }
+    return r;
+  };
+  const unrankPerm = (r, n) => {
+    const avail = [];
+    for (let i = 0; i < n; i++) avail.push(i);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const f = FACT[n - 1 - i], k = (r / f) | 0;
+      r %= f;
+      out.push(avail[k]);
+      avail.splice(k, 1);
+    }
+    return out;
+  };
+
+  const eoRank = eo => { let r = 0; for (let i = 0; i < 11; i++) r = r * 2 + eo[i]; return r; };  // 2048
+  const coRank = co => { let r = 0; for (let i = 0; i < 7; i++) r = r * 3 + co[i]; return r; };   // 2187
+  const ringRank = ep => rankPerm(ep.slice(0, 8));                                                // 40320
+  const midRank = ep => rankPerm([ep[8] - 8, ep[9] - 8, ep[10] - 8, ep[11] - 8]);                  // 24
+  const sliceRank = ep => {                                                                        // 495
+    let mask = 0;
+    for (let i = 0; i < 12; i++) if (ep[i] >= 8) mask |= 1 << i;
+    return COMB[mask];
+  };
+
+  /* ---------- move sets of each phase ---------- */
+  const POP = n => { let c = 0; while (n) { n &= n - 1; c++; } return c; };
+  const COMB = new Int16Array(4096).fill(-1), MASKS = [];
+  for (let m = 0; m < 4096; m++) if (POP(m) === 4) { COMB[m] = MASKS.length; MASKS.push(m); }
+
+  const pick = pred => MOVES.map((x, i) => i).filter(i => pred(MOVES[i]));
+  const P2 = pick(x => (x.f === 'F' || x.f === 'B') ? x.k === 2 : true);       // 14
+  const P3 = pick(x => (x.f === 'U' || x.f === 'D') || x.k === 2);             // 10
+  const P4 = pick(x => x.k === 2);                                            //  6
+
+  /* ---------- coordinate move tables (each coordinate factors out) ---------- */
+  const eoT = new Int16Array(2048 * 18);
+  {
+    const eo = new Array(12).fill(0);
+    for (let r = 0; r < 2048; r++) {
+      let v = r, x = 0;
+      for (let i = 10; i >= 0; i--) { eo[i] = v & 1; x ^= eo[i]; v >>= 1; }
+      eo[11] = x;
+      for (let mi = 0; mi < 18; mi++) {
+        const m = MOVES[mi].m;
+        let res = 0;
+        for (let i = 0; i < 11; i++) res = res * 2 + ((eo[m.ep[i]] + m.eo[i]) & 1);
+        eoT[r * 18 + mi] = res;
+      }
+    }
+  }
+  const coT = new Int16Array(2187 * 14);
+  {
+    const co = new Array(8).fill(0);
+    for (let r = 0; r < 2187; r++) {
+      let v = r, s = 0;
+      for (let i = 6; i >= 0; i--) { co[i] = v % 3; s += co[i]; v = (v / 3) | 0; }
+      co[7] = (3 - s % 3) % 3;
+      for (let j = 0; j < 14; j++) {
+        const m = MOVES[P2[j]].m;
+        let res = 0;
+        for (let i = 0; i < 7; i++) res = res * 3 + ((co[m.cp[i]] + m.co[i]) % 3);
+        coT[r * 14 + j] = res;
+      }
+    }
+  }
+  const sliceT = new Int16Array(495 * 14);
+  for (let r = 0; r < 495; r++) {
+    const mask = MASKS[r];
+    for (let j = 0; j < 14; j++) {
+      const m = MOVES[P2[j]].m;
+      let nm = 0;
+      for (let i = 0; i < 12; i++) if (mask & (1 << m.ep[i])) nm |= 1 << i;
+      sliceT[r * 14 + j] = COMB[nm];
+    }
+  }
+
+  /* permutation tables under a move set, for a given slice of the state */
+  const permTable = (n, set, extract) => {
+    const nR = FACT[n];
+    const t = new Int32Array(nR * set.length);
+    for (let r = 0; r < nR; r++) {
+      const p = extract(unrankPerm(r, n));
+      for (let j = 0; j < set.length; j++) t[r * set.length + j] = rankPerm(p(MOVES[set[j]].m));
+    }
+    return t;
+  };
+  const cornerSlot = (set, n) => permTable(n, set, cp => m => {
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = cp[m.cp[i]];
+    return out;
+  });
+  const edgeSlot = (set, n, off) => permTable(n, set, e => m => {
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = e[m.ep[i + off] - off];
+    return out;
+  });
+
+  const cT2 = cornerSlot(P3, 8), rT2 = edgeSlot(P3, 8, 0), mT2 = edgeSlot(P3, 4, 8);
+  const cT3 = cornerSlot(P4, 8), rT3 = edgeSlot(P4, 8, 0), mT3 = edgeSlot(P4, 4, 8);
+
+  /* ---------- BFS distances ---------- */
+  const bfs = (n, setLen, next, start = 0) => {
+    const dist = new Uint8Array(n).fill(255);
+    const q = new Int32Array(n);
+    let head = 0, tail = 0;
+    dist[start] = 0; q[tail++] = start;
+    while (head < tail) {
+      const s = q[head++], d = dist[s] + 1;
+      for (let j = 0; j < setLen; j++) {
+        const t = next(s, j);
+        if (dist[t] === 255) { dist[t] = d; q[tail++] = t; }
+      }
+    }
+    return dist;
+  };
+  const dist1 = bfs(2048, 18, (s, j) => eoT[s * 18 + j]);
+  const SLICE_GOAL = COMB[0xF00];   // E-slice edges sitting in positions 8..11
+  const dist2 = bfs(2187 * 495, 14, (s, j) => {
+    const c = (s / 495) | 0, sl = s - c * 495;
+    return coT[c * 14 + j] * 495 + sliceT[sl * 14 + j];
+  }, SLICE_GOAL);
+
+  /* ---------- G3 = <half turns>, enumerated exactly ----------
+     In G3 orientations vanish and edges stay inside their slice, so a state
+     is pinned by (corner perm, ring-edge perm, E-edge perm).                */
+  const G3 = new Map();
+  const inCorner = new Uint8Array(40320), inEdge = new Uint8Array(40320 * 24);
+  {
+    const queue = [0];
+    G3.set(0, 0); inCorner[0] = 1; inEdge[0] = 1;
+    for (let head = 0; head < queue.length; head++) {
+      const key = queue[head], d = G3.get(key) + 1;
+      const m = key % 24, rest = (key - m) / 24, r = rest % 40320, c = (rest - r) / 40320;
+      for (let j = 0; j < 6; j++) {
+        const c2 = cT3[c * 6 + j], r2 = rT3[r * 6 + j], m2 = mT3[m * 6 + j];
+        const k = (c2 * 40320 + r2) * 24 + m2;
+        if (!G3.has(k)) { G3.set(k, d); inCorner[c2] = 1; inEdge[r2 * 24 + m2] = 1; queue.push(k); }
+      }
+    }
+  }
+
+  /* G3's corner and edge projections act independently: 96 x 6912 = |G3| */
+  const C3 = [], E3 = [];
+  for (let i = 0; i < 40320; i++) if (inCorner[i]) C3.push(unrankPerm(i, 8));
+  for (let i = 0; i < 40320 * 24; i++) if (inEdge[i]) {
+    const r = (i / 24) | 0, m = i - r * 24;
+    E3.push([unrankPerm(r, 8), unrankPerm(m, 4)]);
+  }
+
+  /* ---------- phase-3 quotient ----------
+     A move acts on the state as right composition, which carries the right
+     coset h*a to h*(a*m) — another right coset. So the 29 400 cosets of G3
+     form a graph under the ten phase-3 moves, and BFS on it is exact.   */
+  const cIdxOf = new Int32Array(40320).fill(-1), cReps = [];
+  for (let r = 0; r < 40320; r++) {
+    if (cIdxOf[r] !== -1) continue;
+    const id = cReps.length, a = unrankPerm(r, 8);
+    cReps.push(a); cIdxOf[r] = id;
+    for (const h of C3) {
+      const o = new Array(8);
+      for (let i = 0; i < 8; i++) o[i] = h[a[i]];
+      cIdxOf[rankPerm(o)] = id;
+    }
+  }
+  const NEall = 40320 * 24;
+  const eIdxOf = new Int32Array(NEall).fill(-1), eReps = [];
+  for (let key = 0; key < NEall; key++) {
+    if (eIdxOf[key] !== -1) continue;
+    const id = eReps.length, r = (key / 24) | 0, m = key - r * 24;
+    const a = unrankPerm(r, 8), b = unrankPerm(m, 4);
+    eReps.push([a, b]); eIdxOf[key] = id;
+    for (const [ha, hb] of E3) {
+      const oa = new Array(8), ob = new Array(4);
+      for (let i = 0; i < 8; i++) oa[i] = ha[a[i]];
+      for (let i = 0; i < 4; i++) ob[i] = hb[b[i]];
+      eIdxOf[rankPerm(oa) * 24 + rankPerm(ob)] = id;
+    }
+  }
+  const NC = cReps.length, NEC = eReps.length;
+  const cMove = new Int32Array(NC * 10), eMove = new Int32Array(NEC * 10);
+  for (let i = 0; i < NC; i++) {
+    const a = cReps[i];
+    for (let j = 0; j < 10; j++) {
+      const m = MOVES[P3[j]].m, o = new Array(8);
+      for (let t = 0; t < 8; t++) o[t] = a[m.cp[t]];
+      cMove[i * 10 + j] = cIdxOf[rankPerm(o)];
+    }
+  }
+  for (let i = 0; i < NEC; i++) {
+    const a = eReps[i][0], b = eReps[i][1];
+    for (let j = 0; j < 10; j++) {
+      const m = MOVES[P3[j]].m, oa = new Array(8), ob = new Array(4);
+      for (let t = 0; t < 8; t++) oa[t] = a[m.ep[t]];
+      for (let t = 0; t < 4; t++) ob[t] = b[m.ep[t + 8] - 8];
+      eMove[i * 10 + j] = eIdxOf[rankPerm(oa) * 24 + rankPerm(ob)];
+    }
+  }
+  const dist3 = bfs(NC * NEC, 10, (s, j) => {
+    const c = (s / NEC) | 0, e = s - c * NEC;
+    return cMove[c * 10 + j] * NEC + eMove[e * 10 + j];
+  });
+
+  /* ---------- phase distances ---------- */
+  const ALL = MOVES.map((x, i) => i);
+  const key3 = s => (rankPerm(s.cp) * 40320 + ringRank(s.ep)) * 24 + midRank(s.ep);
+  const h1 = s => dist1[eoRank(s.eo)];
+  const h2 = s => dist2[coRank(s.co) * 495 + sliceRank(s.ep)];
+  const h3 = s => dist3[cIdxOf[rankPerm(s.cp)] * NEC + eIdxOf[ringRank(s.ep) * 24 + midRank(s.ep)]];
+  const h4 = s => { const d = G3.get(key3(s)); return d === undefined ? 99 : d; };
+
+  /* ---------- the search ----------
+     Every table above is an exact BFS distance in its own quotient graph,
+     and a quotient distance of zero means the state has reached the next
+     group. So each phase is a walk downhill: pick any move that lowers the
+     distance. No scramble information is used anywhere.                 */
+  const descend = (s, set, h, cap) => {
+    const out = [];
+    for (let k = 0; k < cap; k++) {
+      const d = h(s);
+      if (d === 0) return out;
+      let moved = null;
+      for (const mi of set) {
+        const t = step(s, MOVES[mi].m);
+        if (h(t) < d) { moved = MOVES[mi]; s = t; break; }
+      }
+      if (!moved) throw new Error('descent stuck');
+      out.push(moved);
+    }
+    throw new Error('descent too long');
+  };
+
+  /* ---------- solve ---------- */
+  const byToken = new Map();
+  for (const x of MOVES) byToken.set(x.f + x.k, x);
+
+  const solve = scramble => {
+    let s = solved();
+    for (const t of scramble) s = step(s, byToken.get(t.f + t.k).m);
+    const d1 = h1(s);
+    const p1 = descend(s, ALL, h1, 20); for (const m of p1) s = step(s, m.m);
+    const d2 = h2(s);
+    const p2 = descend(s, P2, h2, 25); for (const m of p2) s = step(s, m.m);
+    const d3 = h3(s);
+    const p3 = descend(s, P3, h3, 30); for (const m of p3) s = step(s, m.m);
+    const d4 = h4(s);
+    const p4 = descend(s, P4, h4, 30); for (const m of p4) s = step(s, m.m);
+    if (!isSolved(s)) throw new Error('solve ended unsolved');
+
+    return {
+      phases: [
+        { moves: p1, depth: d1 },
+        { moves: p2, depth: d2 },
+        { moves: p3, depth: d3 },
+        { moves: p4, depth: d4 },
+      ],
+      total: p1.length + p2.length + p3.length + p4.length,
+      states: G3.size,
+      cosets: NC * NEC,
+    };
+  };
+
+  const isSolved = s => s.cp.every((v, i) => v === i) && s.ep.every((v, i) => v === i)
+    && s.co.every(v => v === 0) && s.eo.every(v => v === 0);
+
+  return { solve, step, solved, MOVES, TOKENS, byToken, g3Size: () => G3.size };
+  })();
+  return THISTLE;
+}
+
+if (typeof module !== 'undefined') module.exports = initThistle();
+
+</script>
+<script>
+/* Minimal 3D cube renderer for the demo pages (Canvas 2D projection). */
+const R3D = (() => {
+  const PI = Math.PI;
+  const rotA = (a, th) => { const c = Math.cos(th), s = Math.sin(th);
+    return a === 0 ? [1,0,0, 0,c,-s, 0,s,c] : a === 1 ? [c,0,s, 0,1,0, -s,0,c] : [c,-s,0, s,c,0, 0,0,1]; };
+  const mv3 = (M, v) => [M[0]*v[0] + M[1]*v[1] + M[2]*v[2], M[3]*v[0] + M[4]*v[1] + M[5]*v[2], M[6]*v[0] + M[7]*v[1] + M[8]*v[2]];
+  const mm3 = (A, B) => { const C = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+    C.push(A[i*3]*B[j] + A[i*3+1]*B[3+j] + A[i*3+2]*B[6+j]); return C; };
+  const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16);
+    return `rgb(${Math.min(255, ((n >> 16) & 255) * k) | 0},${Math.min(255, ((n >> 8) & 255) * k) | 0},${Math.min(255, (n & 255) * k) | 0})`; };
+
+  /* muted sticker palette, pulled towards the deck's paper-and-clay tokens */
+  const COL = [['#C87E42', '#AC4A3D'], ['#D8BA66', '#F2EAD8'], ['#4A6E90', '#44897B']];
+  const AXIS = { U: [1, 1, -1], D: [1, -1, 1], R: [0, 1, -1], L: [0, -1, 1], F: [2, 1, -1], B: [2, -1, 1] };
+
+  const CUBIES = (() => {
+    const out = [];
+    for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+      const p = [x, y, z], faces = [];
+      for (let a = 0; a < 3; a++) for (const s of [-1, 1]) {
+        const b = (a + 1) % 3, c = (a + 2) % 3, n = [0, 0, 0]; n[a] = s;
+        const quad = (off, hs) => [[-1,-1],[1,-1],[1,1],[-1,1]].map(([u, v]) => {
+          const q = [0, 0, 0]; q[a] = s * off; q[b] = u * hs; q[c] = v * hs; return q; });
+        const on = p[a] === s;
+        faces.push({ n, body: quad(.5, .5), st: on ? quad(.501, .42) : null, col: on ? COL[a][s > 0 ? 1 : 0] : null });
+      }
+      out.push({ p, faces });
+    }
+    return out;
+  })();
+
+  const solved = () => CUBIES.map(c => ({ M: [1,0,0, 0,1,0, 0,0,1], p: c.p.slice() }));
+
+  /* ---------- piece identity, for the phase slides' highlights ----------
+     Only the U/D and F/B axes matter to Thistlethwaite's constraints, so the
+     predicates below are written against the rotation matrix directly. */
+  const HOME = CUBIES.map(c => c.p.slice());
+  const KIND = HOME.map(p => {
+    const n = p.filter(v => v).length;
+    return n === 3 ? 'corner' : n === 2 ? 'edge' : n === 1 ? 'centre' : 'core';
+  });
+  const orbitOf = p => {
+    const n = p.filter(v => v).length;
+    if (n === 3) return p[0] * p[1] * p[2] > 0 ? 'c1' : 'c0';
+    if (n === 2) return 'e' + p.findIndex(v => v === 0);
+    return '';
+  };
+  const ORBIT = HOME.map(orbitOf);
+
+  /* An edge is oriented when its primary sticker (U/D for a U/D edge, F/B for
+     a middle edge) lies on the U/D face in the U/D layers and on the F/B face
+     in the middle layer. A corner is oriented when its U/D sticker is up or
+     down. Both match the solver's eo/co move tables exactly. */
+  const oriented = (st, i) => {
+    const h = HOME[i], q = st[i], k = KIND[i];
+    if (k === 'corner') return Math.abs(q.M[4]) === 1;
+    if (k !== 'edge') return true;
+    const sticker = Math.abs(h[1]) === 1 ? 1 : 2;
+    const face = q.p[1] !== 0 ? 1 : 2;
+    return Math.abs(q.M[3 * face + sticker]) === 1;
+  };
+  const inOrbit = (st, i) => ORBIT[i] !== '' && ORBIT[i] === orbitOf(st[i].p);
+  const isHome = (st, i) => oriented(st, i) && st[i].p.every((v, j) => v === HOME[i][j]);
+
+  const apply = (st, f, k) => {
+    const [a, l, d] = AXIS[f], R = rotA(a, d * k * PI / 2);
+    for (const q of st) if (Math.round(q.p[a]) === l) {
+      q.p = mv3(R, q.p).map(Math.round);
+      q.M = mm3(R, q.M).map(Math.round);
+    }
+  };
+
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const draw = (ctx, w, h, st, anim, now, mark) => {
+    const cx = w / 2, cy = h * .5, F = Math.min(w, h) * 1.95, D = 11;
+    const yaw = .62 + .04 * Math.sin(now / 5000), pitch = .46;
+    const V = mm3(rotA(0, pitch), rotA(1, yaw));
+    ctx.clearRect(0, 0, w, h);
+
+    let part = null;
+    if (anim) {
+      const [a, l, d] = AXIS[anim.f];
+      part = { a, l, R: rotA(a, d * anim.k * PI / 2 * ease(anim.t)) };
+    }
+
+    const items = [];
+    CUBIES.forEach((c, ci) => {
+      const q = st[ci];
+      const mk = mark ? mark(ci) : null;
+      const inL = part && Math.round(q.p[part.a]) === part.l;
+      const Tw = v => {
+        let o = mv3(q.M, v);
+        o = [o[0] + q.p[0], o[1] + q.p[1], o[2] + q.p[2]];
+        if (inL) o = mv3(part.R, o);
+        return mv3(V, o);
+      };
+      for (const f of c.faces) {
+        let n = mv3(q.M, f.n);
+        if (inL) n = mv3(part.R, n);
+        n = mv3(V, n);
+        const cen = Tw(f.n.map(x => x * .5));
+        if (n[0] * -cen[0] + n[1] * -cen[1] + n[2] * (D - cen[2]) <= 0) continue;
+        const prj = pts => pts.map(v => { const o = Tw(v), z = D - o[2]; return [cx + F * o[0] / z, cy - F * o[1] / z]; });
+        const lit = .74 + .30 * Math.max(0, n[0] * -.35 + n[1] * .62 + n[2] * .7);
+        items.push({ z: cen[2], body: prj(f.body), st: f.st ? prj(f.st) : null, col: f.col, lit, sc: F / 1000, mk });
+      }
+    });
+    items.sort((a, b) => a.z - b.z);
+
+    const poly = pts => { ctx.beginPath(); pts.forEach((p, i) => ctx[i ? 'lineTo' : 'moveTo'](p[0], p[1])); ctx.closePath(); };
+    ctx.save(); ctx.lineJoin = 'round';
+    for (const it of items) {
+      poly(it.body); ctx.fillStyle = '#171512'; ctx.fill();
+      ctx.strokeStyle = '#171512'; ctx.lineWidth = 2; ctx.stroke();
+      if (!it.st) continue;
+      poly(it.st);
+      const col = shade(it.col, it.lit);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 7 * it.sc; ctx.stroke();
+      const [a, , c2] = it.st, g = ctx.createLinearGradient(a[0], a[1], c2[0], c2[1]);
+      g.addColorStop(0, `rgba(255,255,255,${.16 * it.lit})`);
+      g.addColorStop(.5, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fill();
+      /* a restored piece gets an inset accent frame; the sticker fill and its
+         own border stay exactly as they are */
+      if (it.mk) {
+        const q = it.st;
+        const cx = (q[0][0] + q[1][0] + q[2][0] + q[3][0]) / 4;
+        const cy = (q[0][1] + q[1][1] + q[2][1] + q[3][1]) / 4;
+        poly(q.map(([x, y]) => [cx + (x - cx) * .78, cy + (y - cy) * .78]));
+        ctx.strokeStyle = it.mk;
+        ctx.lineWidth = 2.5 * it.sc;
+        ctx.stroke();
+      }
+      /* the 7px sticker stroke reaches the body edge and eats the silhouette on
+         far faces; restroke it so every cubie keeps its outline */
+      poly(it.body); ctx.strokeStyle = '#171512'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  return { solved, apply, draw, AXIS, HOME, KIND, ORBIT, oriented, inOrbit, isHome };
+})();
+
+</script>
+<script>
+/* data-alg="U R F2 D" pre-turns the cube so the slide can show a named state. */
+const cubeToken = t => [t[0], t[1] === '2' ? 2 : t[1] === "'" ? 3 : 1];
+
+function state(cv) {
+  const st = R3D.solved();
+  for (const t of (cv.dataset.alg || '').trim().split(/\s+/)) {
+    if (!t) continue;
+    const [f, k] = cubeToken(t);
+    R3D.apply(st, f, k);
+  }
+  return st;
+}
+
+/* Draws every <canvas class="cube-canvas">; a .demo canvas can also be driven.
+   A canvas with data-moves plays that phase on a loop and highlights the pieces
+   the phase has put into their group-mandated state. */
+(() => {
+  const canvases = [...document.querySelectorAll('canvas.cube-canvas')];
+  if (!canvases.length || typeof R3D === 'undefined') return;
+
+  const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const CO = { clay: cssv('--clay'), teal: cssv('--teal'), olive: cssv('--olive') };
+  /* a = olive, b = clay, c = teal — the same three groups as the orbit legend */
+  const ORBIT_COLOR = { c0: CO.olive, c1: CO.clay, e0: CO.olive, e1: CO.clay, e2: CO.teal };
+
+  const MARKS = {
+    /* G1: every edge's primary sticker upright */
+    g1: (ci, st) => R3D.KIND[ci] === 'edge' && R3D.oriented(st, ci) ? CO.clay : null,
+    /* G2: corners flat, and the middle-slice edges inside the slice */
+    g2: (ci, st) => R3D.KIND[ci] === 'corner'
+      ? (R3D.oriented(st, ci) ? CO.clay : null)
+      : R3D.KIND[ci] === 'edge' && R3D.HOME[ci][1] === 0 && st[ci].p[1] === 0 ? CO.teal : null,
+    /* G3: every piece back inside its own orbit */
+    g3: (ci, st) => R3D.inOrbit(st, ci) ? ORBIT_COLOR[R3D.ORBIT[ci]] : null,
+    /* G4: every piece home */
+    g4: (ci, st) => R3D.KIND[ci] === 'corner' || R3D.KIND[ci] === 'edge'
+      ? (R3D.isHome(st, ci) ? CO.clay : null) : null,
+  };
+
+  const items = canvases.map(cv => {
+    const it = {
+      cv, ctx: cv.getContext('2d'), st: state(cv), active: false,
+      queue: null, anim: null, hold: 0, onMove: null, onLand: null, onDone: null,
+      moves: (cv.dataset.moves || '').trim().split(/\s+/).filter(Boolean),
+      mode: cv.dataset.mark || '', timer: 0, mark: null,
+    };
+    if (MARKS[it.mode]) it.mark = ci => MARKS[it.mode](ci, it.st);
+    return it;
+  });
+  const find = cv => items.find(it => it.cv === cv);
+
+  /* live tally printed in the figure's .tally block */
+  function tally(it) {
+    const box = it.cv.closest('.cube-stage');
+    if (!box) return;
+    const put = (k, v) => {
+      const el = box.querySelector('[data-c="' + k + '"]');
+      if (el) el.textContent = v;
+    };
+    let edges = 0, corners = 0, slice = 0, orbit = 0, home = 0;
+    it.st.forEach((q, ci) => {
+      const kind = R3D.KIND[ci];
+      if (kind === 'edge') {
+        if (R3D.oriented(it.st, ci)) edges++;
+        if (R3D.HOME[ci][1] === 0 && q.p[1] === 0) slice++;
+      } else if (kind === 'corner' && R3D.oriented(it.st, ci)) corners++;
+      if (kind !== 'corner' && kind !== 'edge') return;
+      if (R3D.inOrbit(it.st, ci)) orbit++;
+      if (R3D.isHome(it.st, ci)) home++;
+    });
+    if (it.mode === 'g1') put('edges', edges + ' / 12');
+    if (it.mode === 'g2') { put('corners', corners + ' / 8'); put('slice', slice + ' / 4'); }
+    if (it.mode === 'g3') put('orbit', orbit + ' / 20');
+    if (it.mode === 'g4') put('home', home + ' / 20');
+  }
+
+  function startLoop(it) {
+    clearTimeout(it.timer);
+    window.CUBE.reset(it.cv);
+    tally(it);
+    window.CUBE.play(it.cv, it.moves, {
+      onLand: () => tally(it),
+      onDone: () => { it.timer = setTimeout(() => startLoop(it), 2600); },
+    });
+  }
+
+  document.addEventListener('slide', e => {
+    items.forEach(it => {
+      const on = e.detail.el.contains(it.cv);
+      /* resuming after a detour: don't let the clock snap the turn shut */
+      if (on && !it.active && it.anim) it.anim.t0 = performance.now();
+      if (it.moves.length) {
+        if (on && !it.active) startLoop(it);
+        else if (!on && it.active) { clearTimeout(it.timer); window.CUBE.stop(it.cv); }
+      }
+      it.active = on;
+    });
+  });
+
+  /* deck.js dispatches its first slide before this script runs */
+  const first = document.querySelectorAll('.slide')[window.DECK ? DECK.index : 0];
+  if (first) items.forEach(it => { it.active = first.contains(it.cv); });
+
+  function size(it) {
+    const r = it.cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(r.width * dpr));
+    const h = Math.max(1, Math.round(r.height * dpr));
+    if (it.cv.width !== w || it.cv.height !== h) {
+      it.cv.width = w; it.cv.height = h;
+      it.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    return { w: r.width, h: r.height };
+  }
+
+  function frame(now) {
+    for (const it of items) {
+      if (!it.active) continue;
+      const { w, h } = size(it);
+      if (w < 2 || h < 2) continue;
+
+      /* start the next queued turn once the previous one has settled */
+      if (it.queue && !it.anim && now >= it.hold) {
+        const tok = it.queue.shift();
+        if (!tok) {
+          it.queue = null;
+          if (it.onDone) it.onDone();
+        } else {
+          const [f, k] = cubeToken(tok);
+          it.anim = { f, k, t0: now, dur: k === 2 ? 520 : 380 };
+          if (it.onMove) it.onMove(tok);
+        }
+      }
+      if (it.anim && now - it.anim.t0 >= it.anim.dur) {
+        R3D.apply(it.st, it.anim.f, it.anim.k);
+        if (it.onLand) it.onLand();
+        it.hold = it.anim.t0 + it.anim.dur + 90;
+        it.anim = null;
+      }
+
+      /* data-fit shrinks the cube inside its box; R3D always fills min(w,h) */
+      const f = +it.cv.dataset.fit || 1;
+      const ww = w * f, hh = h * f;
+      it.ctx.save();
+      /* Perspective pushes the near bottom corner out further than the far top
+         corner, so the projected box sits low; lift it back by ~13% of the
+         cube's own scale. */
+      it.ctx.translate((w - ww) / 2, (h - hh) / 2 - Math.min(ww, hh) * .05);
+      const anim = it.anim
+        ? { f: it.anim.f, k: it.anim.k, t: (now - it.anim.t0) / it.anim.dur }
+        : null;
+      R3D.draw(it.ctx, ww, hh, it.st, anim, now, it.mark);
+      it.ctx.restore();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  window.CUBE = {
+    play(cv, tokens, opts = {}) {
+      const it = find(cv);
+      if (!it) return;
+      it.queue = tokens.slice();
+      it.anim = null;
+      it.hold = 0;
+      it.onMove = opts.onMove || null;
+      it.onLand = opts.onLand || null;
+      it.onDone = opts.onDone || null;
+    },
+    stop(cv) {
+      const it = find(cv);
+      if (!it) return;
+      it.queue = null; it.anim = null; it.onMove = it.onLand = it.onDone = null;
+    },
+    /* back to the state named by data-alg */
+    reset(cv) {
+      const it = find(cv);
+      if (!it) return;
+      window.CUBE.stop(cv);
+      it.hold = 0;
+      it.st = state(cv);
+    },
+    active: cv => { const it = find(cv); return !!it && it.active; },
+  };
+
+  /* a phase canvas opened directly on its slide starts playing at once */
+  if (first) items.forEach(it => { if (it.active && it.moves.length) startLoop(it); });
+})();
+
+</script>
+<script>
+/* Drives the .demo cube: a fresh random scramble every round, solved live by the
+   Thistlethwaite tables and played one turn at a time.
+
+   The phase ledger is printed from whatever the solver actually returns, so the
+   sequence on screen and the turns in the animation cannot drift apart. If the
+   tables are not warm yet, the slide falls back to the sequence baked into the
+   HTML and retries with a random scramble as soon as they are. */
+(() => {
+  const cv = document.querySelector('canvas.cube-canvas.demo');
+  if (!cv || !window.CUBE || typeof cubeToken !== 'function') return;
+
+  const rows = [...document.querySelectorAll('.phases li[data-moves]')];
+  const now = document.querySelector('#demoNow');
+  const tag = document.querySelector('#demoTag');
+  const btn = document.querySelector('#demoShuffle');
+  const TAGS = ['G₁', 'G₂', 'G₃', 'G₄'];
+
+  const BAKE_ALG = cv.dataset.alg;
+  const baked = rows.map(li => li.dataset.moves.trim().split(/\s+/).filter(Boolean));
+
+  const pretty = t => t.replace("'", '′').replace('2', '²');
+  const FACES = ['U', 'D', 'L', 'R', 'F', 'B'];
+  const opposite = { U: 'D', D: 'U', L: 'R', R: 'L', F: 'B', B: 'F' };
+
+  /* thirteen turns: never the same face twice, never a face and its opposite */
+  function scramble(n = 13) {
+    const out = [];
+    let prev = '';
+    while (out.length < n) {
+      const f = FACES[Math.floor(Math.random() * 6)];
+      if (f === prev || f === opposite[prev]) continue;
+      const k = 1 + Math.floor(Math.random() * 3);
+      out.push(f + (k === 2 ? '2' : k === 3 ? "'" : ''));
+      prev = f;
+    }
+    return out;
+  }
+
+  const asToken = m => m.f + (m.k === 2 ? '2' : m.k === 3 ? "'" : '');
+
+  function solvePhases(scr) {
+    if (!window.THISTLE_READY || typeof initThistle !== 'function') return null;
+    try {
+      const moves = scr.map(t => { const [f, k] = cubeToken(t); return { f, k }; });
+      return initThistle().solve(moves).phases.map(p => p.moves.map(asToken));
+    } catch (e) { return null; }
+  }
+
+  let plan = baked, bounds = [], n = 0, timer = 0;
+
+  function recount() {
+    bounds = [];
+    let acc = 0;
+    for (const p of plan) { acc += p.length; bounds.push(acc); }
+  }
+
+  function print() {
+    rows.forEach((li, i) => {
+      li.dataset.moves = plan[i].join(' ');
+      li.querySelector('.ms').textContent = plan[i].map(pretty).join(' ');
+      const ct = li.querySelector('.ct');
+      if (ct) ct.textContent = plan[i].length;
+    });
+  }
+
+  function paint(k) {
+    const total = bounds.length ? bounds[bounds.length - 1] : 0;
+    if (now) now.textContent = k === 0 ? 'the scramble' : 'move ' + k + ' of ' + total;
+    if (!rows.length) return;
+    const j = k === 0 ? 0 : Math.max(0, bounds.findIndex(b => k <= b));
+    rows.forEach((li, i) => li.classList.toggle('on', i === j));
+    if (tag) tag.textContent = TAGS[j];
+  }
+
+  function start() {
+    clearTimeout(timer);
+
+    const scr = scramble();
+    const live = solvePhases(scr);
+    if (live) {
+      plan = live;
+      cv.dataset.alg = scr.join(' ');
+    } else {
+      plan = baked;
+      cv.dataset.alg = BAKE_ALG;
+    }
+
+    recount();
+    print();
+    CUBE.reset(cv);
+    n = 0;
+    paint(0);
+    CUBE.play(cv, plan.flat(), {
+      onMove: () => { n++; paint(n); },
+      onDone: () => { timer = setTimeout(start, 2600); },
+    });
+  }
+
+  document.addEventListener('slide', e => {
+    if (e.detail.el.contains(cv)) start();
+    else { clearTimeout(timer); CUBE.stop(cv); }
+  });
+
+  if (btn) btn.addEventListener('click', start);
+  addEventListener('keydown', e => {
+    if ((e.key === 'r' || e.key === 'R') && CUBE.active(cv)) start();
+  });
+
+  if (CUBE.active(cv)) start();
+
+  /* Build the quotient tables before this slide comes up, but not during the
+     opening — the build blocks the main thread for a second or two, and the
+     first slide change is the moment nobody is looking at the cube. */
+  if (typeof initThistle === 'function' && !window.THISTLE_READY) {
+    const warm = () => {
+      try { initThistle(); window.THISTLE_READY = true; } catch (e) { return; }
+      /* the baked round that may already be playing is not random: redo it */
+      if (CUBE.active(cv)) start();
+    };
+    const schedule = () => setTimeout(warm, 700);
+    if (CUBE.active(cv)) {
+      /* opened straight onto this slide: warm anyway, a beat later */
+      schedule();
+    } else {
+      const onSlide = e => {
+        if (e.detail.index < 1) return;
+        document.removeEventListener('slide', onSlide);
+        schedule();
+      };
+      document.addEventListener('slide', onSlide);
+    }
+  }
+})();
+
+</script>
+</body>
+</html>
