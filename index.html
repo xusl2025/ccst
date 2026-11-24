@@ -591,19 +591,6 @@ body{
 /* =========================================================
    ORBITS: dots grouped by reachability
    ========================================================= */
-.orbits{display:flex;flex-direction:column;gap:14px;margin:30px 0 0}
-.orbits .row{display:flex;align-items:center;gap:20px}
-.orbits .tag{
-  width:82px;flex:none;font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--muted);
-}
-.orbits .grp{
-  display:flex;gap:7px;padding:7px 14px;border:1.5px solid var(--ink);border-radius:40px;
-}
-.orbits .grp i{width:11px;height:11px;border-radius:50%;background:var(--olive)}
-.orbits .grp.b i{background:var(--clay)}
-.orbits .grp.c i{background:var(--teal)}
-
 /* =========================================================
    STRIP: five positions in a row
    ========================================================= */
@@ -682,6 +669,18 @@ body.bare .slide{transition:none}
   .slide,.hud .fill{transition:none}
 }
 
+.axiom .distance-table{
+  width:100%;margin-top:12px;border-collapse:collapse;table-layout:fixed;
+  font-family:var(--body);font-size:15px;text-align:center;
+}
+.axiom .distance-table th,.axiom .distance-table td{padding:4px 0}
+.axiom .distance-table thead tr{border-bottom:1px solid var(--rule)}
+.axiom .distance-table tr > :first-child{
+  width:45%;text-align:left;color:var(--muted);font-weight:500;
+}
+.axiom .distance-table td{color:var(--ink);font-size:20px;font-weight:800}
+.axiom .eg .turn-picked{color:var(--clay-deep);font-weight:700}
+
 </style>
 </head>
 <body>
@@ -734,7 +733,7 @@ body.bare .slide{transition:none}
         </article>
         <article class="step">
           <div class="idx">02</div>
-          <h3>One page</h3>
+          <h3>One answer</h3>
           <span class="abbr">The notation</span>
           <p>Nothing counts unless it is written down, then read back by a judge.</p>
         </article>
@@ -767,7 +766,7 @@ body.bare .slide{transition:none}
     <div class="frame">
       <div class="kicker"><span class="no">II</span><span>The event</span><span class="line"></span></div>
 
-      <h1 class="title">Four passes, no <em>searching</em>.</h1>
+      <h1 class="title">CFOP: four passes, no <em>searching</em>.</h1>
       <p class="lede">A speedcuber does not explore the state space. CFOP replaces search with a library of memorised sequences, applied in a fixed order.</p>
 
       <div class="steps">
@@ -918,9 +917,9 @@ body.bare .slide{transition:none}
       <div class="axioms">
         <article class="axiom">
           <div class="n">I</div>
-          <h3>Closure</h3>
-          <p>Turn, then turn again. The result is still a position of the cube.</p>
-          <p class="eg">U &middot; R&prime; &middot; D&sup2; &isin; G</p>
+          <h3>Associativity</h3>
+          <p>Bracketing is free: three turns group either way and still mean the same move.</p>
+          <p class="eg">(U &middot; R) &middot; F = U &middot; (R &middot; F)</p>
         </article>
         <article class="axiom">
           <div class="n">II</div>
@@ -943,7 +942,7 @@ body.bare .slide{transition:none}
 
       <div class="foot">
         <span>Abstract Algebra &middot; 2026</span>
-        <span>Closure &middot; inverse &middot; identity</span>
+        <span>Associativity &middot; inverse &middot; identity</span>
       </div>
     </div>
   </section>
@@ -1148,19 +1147,11 @@ body.bare .slide{transition:none}
             <li class="key">Legal now, half turn only after this phase</li>
           </ul>
 
-          <div class="orbits">
-            <div class="row"><span class="tag">Corners</span>
-              <span class="grp a"><i></i><i></i><i></i><i></i></span>
-              <span class="grp b"><i></i><i></i><i></i><i></i></span>
-            </div>
-            <div class="row"><span class="tag">Edges</span>
-              <span class="grp a"><i></i><i></i><i></i><i></i></span>
-              <span class="grp b"><i></i><i></i><i></i><i></i></span>
-              <span class="grp c"><i></i><i></i><i></i><i></i></span>
-            </div>
-          </div>
-
           <dl class="facts">
+            <dt>Frozen</dt>
+            <dd>every piece&rsquo;s orbit: corners 4 + 4, edges 4 + 4 + 4</dd>
+            <dt>Still free</dt>
+            <dd>every permutation inside each orbit</dd>
             <dt>Search</dt>
             <dd><b>29 400</b> orbit-respecting states</dd>
             <dt>Worst case</dt>
@@ -1235,25 +1226,32 @@ body.bare .slide{transition:none}
         <article class="axiom">
           <div class="n">I</div>
           <h3>Collapse</h3>
-          <p>Distance to G<sub>1</sub> depends only on which coset you occupy &mdash; the 2,048 edge orientations.</p>
-          <p class="eg">h<sub>1</sub> : G &rarr; {0 &hellip; 7}</p>
+          <p>Phase 1 groups cube states by edge-flip pattern.</p>
+          <p class="eg">2,048 patterns</p>
         </article>
         <article class="axiom">
           <div class="n">II</div>
           <h3>Tabulate</h3>
-          <p>A breadth-first search fills in that distance for every node, once.</p>
-          <p class="eg">|quotient| = 2 048</p>
+          <p>Search outward from the goal, layer by layer. Record each pattern’s distance when it first appears.</p>
+          <table class="distance-table" aria-label="Example distance table for phase one">
+            <thead>
+              <tr><th scope="col">Example patterns</th><th scope="col">Goal</th><th scope="col">A, B</th><th scope="col">C, D</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Moves to phase goal</th><td>0</td><td>1</td><td>2</td></tr>
+            </tbody>
+          </table>
         </article>
         <article class="axiom">
           <div class="n">III</div>
           <h3>Descend</h3>
-          <p>Solving is then downhill: take any move that lowers the distance, until it reaches zero.</p>
-          <p class="eg">h = 0 &nbsp;&hArr;&nbsp; the cube is inside the next group</p>
+          <p>Try an allowed turn, then look up the new distance. Choose a turn that lowers it by one.</p>
+          <p class="eg"><span class="turn-picked">Top face 90&deg; clockwise &middot; 5 &rarr; 4 &#10003;</span><br>Top face 180&deg; &middot; 5 &rarr; 5</p>
         </article>
       </div>
 
       <div class="takeaway">
-        <p>The table is not a heuristic. A quotient distance of zero means the cube <b>really has landed</b> in the next group.</p>
+        <p>0 means this phase is complete.</p>
         <span class="tick">repeat four times</span>
       </div>
 
@@ -1309,8 +1307,8 @@ body.bare .slide{transition:none}
       </div>
 
       <div class="takeaway">
-        <p>Twenty-nine moves, four searches, one pass. At no point did the solver look at the scramble: it only asked, again and again, <b>how far am I from the next group?</b></p>
-        <span class="tick">29 moves</span>
+        <p>Phase 1 moves left &middot; <b>5 &rarr; 4 &rarr; 3 &rarr; 2 &rarr; 1 &rarr; 0</b></p>
+        <span class="tick">29 moves in this example</span>
       </div>
 
       <div class="foot">
@@ -1333,7 +1331,7 @@ body.bare .slide{transition:none}
         <div class="prose">
           <p class="pair"><b>G<sub>0</sub></b><span class="arw">&rarr;</span><b>G<sub>4</sub></b></p>
           <h1 class="title">Watch one solution <em>happen</em>.</h1>
-          <p class="lede">A fresh scramble every round. It plays in, then the solution walks back down &mdash; nothing is rewound.</p>
+          <p class="lede">The solver finds the route first. The animation plays it one move at a time.</p>
 
           <ol class="phases">
             <li data-moves="U F B D' B">
