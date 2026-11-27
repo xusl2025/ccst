@@ -911,33 +911,33 @@ body.bare .slide{transition:none}
     <div class="frame">
       <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
 
-      <h1 class="title">A group is a set that <em>closes</em>.</h1>
-      <p class="lede">Take every sequence of the six turns. The distinct positions you reach form the cube group.</p>
+      <h1 class="title">A group is a set with a binary <em>operation</em> *</h1>
+      <p class="lede">∗ : G×G→G, (x,y)→x∗y.</p>
 
       <div class="axioms">
         <article class="axiom">
           <div class="n">I</div>
           <h3>Associativity</h3>
-          <p>Bracketing is free: three turns group either way and still mean the same move.</p>
+          <p>The order of operations does not affect the result.</p>
           <p class="eg">(U &middot; R) &middot; F = U &middot; (R &middot; F)</p>
         </article>
         <article class="axiom">
           <div class="n">II</div>
-          <h3>Inverses</h3>
-          <p>Every turn can be undone: U then U&prime; leaves the cube untouched.</p>
+          <h3>Identity</h3>
+          <p>An element that does nothing in the position of the cube. </p> 
           <p class="eg">U &middot; U&prime; = e</p>
         </article>
         <article class="axiom">
           <div class="n">III</div>
-          <h3>Identity</h3>
-          <p>The do-nothing move is an element too: the solved cube.</p>
-          <p class="eg">U<sup>4</sup> = e &nbsp;&middot;&nbsp; a turn has order four</p>
+          <h3>Inverses</h3>
+          <p>Every position has a unique way back.</p>
+          <p class="eg">U<sup>4</sup> = e &nbsp;&middot;&nbsp; </p>
         </article>
       </div>
 
       <div class="takeaway">
-        <p>Nothing escapes the set. A scramble and a solution are the <b>same object</b> &mdash; so <i>shortest</i> becomes a question about distance.</p>
-        <span class="tick">G is a group</span>
+        <p>A subgroup is a subset of group with same conditions</p>
+        <span class="tick"></span>
       </div>
 
       <div class="foot">
@@ -951,36 +951,36 @@ body.bare .slide{transition:none}
       <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
 
       <h1 class="title">Forty-three <em>quintillion</em>.</h1>
-      <p class="lede">The number is not a mystery. Eight corners and twelve edges, each with a position and an orientation &mdash; divided by the two constraints that make a cube legal.</p>
+      <p class="lede">Imagine building a cube from scratch: 8 corners and 12 edges. We count every possible arrangement, then divide out the physically impossible ones.</p>
 
       <div class="count">
         <div class="term">
           <span class="lab">Corners</span>
           <span class="math">8! &middot; 3<sup>7</sup></span>
-          <span class="why">Eight corners in any order. Seven may twist; the eighth is forced.</span>
+          <span class="why">8 corners can be placed in 8! ways. Each can twist 3 ways.</span>
         </div>
         <div class="op">&times;</div>
         <div class="term">
           <span class="lab">Edges</span>
           <span class="math">12! &middot; 2<sup>11</sup></span>
-          <span class="why">Twelve edges in any order. Eleven may flip; the twelfth is forced.</span>
+          <span class="why">12 edges can be placed in 12! ways. Each can flip 2 ways.</span>
         </div>
         <div class="op">&divide;</div>
         <div class="term">
           <span class="lab">Parity</span>
           <span class="math">2</span>
-          <span class="why">Only half are reachable. A single swap is no legal move.</span>
+          <span class="why">You can never swap just two pieces. Every turn moves multiple pieces, so exactly half of the arrangements are impossible.</span>
         </div>
       </div>
 
       <div class="result plain">
         <span class="eq">= 43 252 003 274 489 856 000</span>
-        <span class="note">&asymp; 4.33 &times; 10<sup>19</sup></span>
+        <span class="note"></span>
       </div>
 
       <div class="takeaway">
-        <p>A graph that large is not something anyone can look at. Any method that wins here has to avoid looking.</p>
-        <span class="tick">one graph, 4.3 &times; 10<sup>19</sup> vertices</span>
+        <p></p>
+        <span class="tick"> 4.3 &times; 10<sup>19</sup> states</span>
       </div>
 
       <div class="foot">
@@ -993,8 +993,8 @@ body.bare .slide{transition:none}
     <div class="frame">
       <div class="kicker"><span class="no">III</span><span>The group</span><span class="line"></span></div>
 
-      <h1 class="title">Solving is a <em>descent</em>.</h1>
-      <p class="lede">Each subgroup allows fewer turns, freezing one more degree of freedom.</p>
+      <h1 class="title">Constructing <em>subgroups</em>.</h1>
+      <p class="lede">Each subgroup allows fewer turns</p>
 
       <div class="split">
         <figure class="cube-stage">
@@ -1013,26 +1013,26 @@ body.bare .slide{transition:none}
             </li>
             <li>
               <span class="g">G&#8321;</span>
-              <span class="gen">⟨U, D, L, R, F&#178;, B&#178;⟩<span class="meaning">all twelve edges oriented</span></span>
-              <span class="n">2.11 &times; 10&#185;&#8310;<small>2 048</small></span>
+              <span class="gen">⟨U, D, L, R, F&#178;, B&#178;⟩<span class="meaning"></span></span>
+              <span class="n">2.11 &times; 10&#185;&#8310;<small></small></span>
             </li>
             <li class="on">
               <span class="g">G&#8322;</span>
-              <span class="gen">⟨U, D, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning">all eight corners untwisted</span></span>
-              <span class="n">1.95 &times; 10&#185;&#8304;<small>1 082 565</small></span>
+              <span class="gen">⟨U, D, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning"></span></span>
+              <span class="n">1.95 &times; 10&#185;&#8304;<small></small></span>
             </li>
             <li>
               <span class="g">G&#8323;</span>
-              <span class="gen">⟨U&#178;, D&#178;, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning">every block held in its orbit</span></span>
-              <span class="n">663 552<small>29 400</small></span>
+              <span class="gen">⟨U&#178;, D&#178;, L&#178;, R&#178;, F&#178;, B&#178;⟩<span class="meaning"></span></span>
+              <span class="n">663 552<small></small></span>
             </li>
             <li>
               <span class="g">G&#8324;</span>
               <span class="gen">{ e }<span class="meaning">the solved cube</span></span>
-              <span class="n">1<small>663 552</small></span>
+              <span class="n">1<small></small></span>
             </li>
           </ol>
-          <p class="chain-note">The small figure is the quotient <b>|G<sub>i&minus;1</sub> / G<sub>i</sub>|</b> &mdash; the space one phase actually has to search.</p>
+          <p class="chain-note"></p>
         </div>
       </div>
 
@@ -1050,19 +1050,19 @@ body.bare .slide{transition:none}
         <div class="prose">
           <p class="pair"><b>G<sub>0</sub></b><span class="arw">&rarr;</span><b>G<sub>1</sub></b></p>
           <h1 class="title">Stop the edges from <em>flipping</em>.</h1>
-          <p class="lede">Ban the quarter turns of F and B. With those two gone, no sequence can leave an edge turned on its own axis &mdash; and 43 quintillion positions collapse by a factor of 2,048.</p>
+          <p class="lede"> The front and back sides can only be rotated by 180&deg;.</p>
 
           <ul class="moves">
             <li>U</li><li>D</li><li>L</li><li>R</li>
             <li class="lock">F</li><li class="lock">B</li>
-            <li class="key">Legal now, half turn only after this phase</li>
+            <li class="key"></li>
           </ul>
 
           <dl class="facts">
-            <dt>Frozen</dt>
-            <dd>the orientation of all twelve edges</dd>
+            <dt>Locked</dt>
+            <dd>All 12 edge pieces can no longer be flippeds</dd>
             <dt>Still free</dt>
-            <dd>every corner, and every permutation</dd>
+            <dd>You can still move corners and edges to any position</dd>
             <dt>Search</dt>
             <dd><b>2 048</b> edge orientations</dd>
             <dt>Worst case</dt>
@@ -1091,21 +1091,21 @@ body.bare .slide{transition:none}
       <div class="split rev">
         <div class="prose">
           <p class="pair"><b>G<sub>1</sub></b><span class="arw">&rarr;</span><b>G<sub>2</sub></b></p>
-          <h1 class="title">Then stop the corners from <em>twisting</em>.</h1>
-          <p class="lede">Now L and R may only be half-turned. That fixes the twist of all eight corners, and traps the four middle-slice edges in the middle slice, where they can trade places only among themselves.</p>
+          <h1 class="title">Stop the corners from <em>twisting</em>.</h1>
+          <p class="lede">The left and right sides can only be rotated by 180&deg;.</p>
 
           <ul class="moves">
             <li>U</li><li>D</li>
             <li class="lock">L</li><li class="lock">R</li>
             <li>F&sup2;</li><li>B&sup2;</li>
-            <li class="key">Legal now, half turn only after this phase</li>
+            <li class="key"></li>
           </ul>
 
           <dl class="facts">
-            <dt>Frozen</dt>
-            <dd>the twist of all eight corners; the middle-slice edges stay in the middle</dd>
+            <dt>Locked</dt>
+            <dd>Corners are flat (no twisting). Middle edges stay in the middle belt.</dd>
             <dt>Still free</dt>
-            <dd>every permutation that respects the slices</dd>
+            <dd>You can still rearrange the pieces within their zones</dd>
             <dt>Search</dt>
             <dd><b>1 082 565</b> corner and slice states</dd>
             <dt>Worst case</dt>
@@ -1138,18 +1138,18 @@ body.bare .slide{transition:none}
         <div class="prose">
           <p class="pair"><b>G<sub>2</sub></b><span class="arw">&rarr;</span><b>G<sub>3</sub></b></p>
           <h1 class="title">Half turns only: every piece is <em>trapped</em>.</h1>
-          <p class="lede">With all six faces limited to 180&deg;, no piece can change orbit. The eight corners divide into two tetrahedra of four; the twelve edges fall into three groups of four. Every piece may move &mdash; but only inside its own set.</p>
+          <p class="lede">With all rotation limited to 180&deg;.</p>
 
           <ul class="moves">
             <li class="lock">U</li><li class="lock">D</li>
             <li>L&sup2;</li><li>R&sup2;</li>
             <li>F&sup2;</li><li>B&sup2;</li>
-            <li class="key">Legal now, half turn only after this phase</li>
+            <li class="key"></li>
           </ul>
 
           <dl class="facts">
-            <dt>Frozen</dt>
-            <dd>every piece&rsquo;s orbit: corners 4 + 4, edges 4 + 4 + 4</dd>
+            <dt>Locked</dt>
+            <dd>Every piece is trapped in its own orbit (4 corners + 4 corners; three sets of 4 edges).</dd>
             <dt>Still free</dt>
             <dd>every permutation inside each orbit</dd>
             <dt>Search</dt>
